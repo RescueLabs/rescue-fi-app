@@ -1,0 +1,106 @@
+module.exports = {
+  root: true,
+  env: {
+    browser: true,
+    node: true,
+  },
+  parserOptions: {
+    tsconfigRootDir: __dirname,
+    project: './tsconfig.json',
+  },
+  extends: [
+    'next',
+    'airbnb',
+    'airbnb-typescript',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'plugin:prettier/recommended',
+  ],
+  plugins: ['prettier', '@typescript-eslint', 'import'],
+  settings: {
+    'import/parsers': {
+      '@typescript-eslint/parser': ['.ts', '.tsx'],
+    },
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+      },
+    },
+  },
+  rules: {
+    'import/order': [
+      'warn',
+      {
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          'parent',
+          'sibling',
+          'index',
+          'object',
+          'type',
+        ],
+        alphabetize: {
+          order: 'asc',
+        },
+        'newlines-between': 'always',
+      },
+    ],
+    'import/prefer-default-export': 'off',
+    'jsx-a11y/alt-text': 'off',
+    'jsx-a11y/anchor-is-valid': 'off',
+    'jsx-a11y/click-events-have-key-events': 'off',
+    'jsx-a11y/control-has-associated-label': 'off',
+    'jsx-a11y/label-has-associated-control': 'off',
+    'jsx-a11y/no-noninteractive-element-interactions': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'no-alert': 'off',
+    'no-console': 'off',
+    'no-nested-ternary': 'off',
+    'no-param-reassign': 'off',
+    'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
+    'no-restricted-globals': 'off',
+    'no-underscore-dangle': 'off',
+    'prefer-destructuring': ['error', { array: false }],
+    'react/button-has-type': 'off',
+    'react/destructuring-assignment': 'off',
+    'react/function-component-definition': [
+      'warn',
+      { namedComponents: 'arrow-function' },
+    ],
+    'react/jsx-props-no-spreading': [
+      'off',
+      {
+        html: 'ignore',
+        exceptions: ['Component', 'Input', 'TextArea'],
+      },
+    ],
+    'react/jsx-no-constructed-context-values': 'warn',
+    'react/no-array-index-key': 'off',
+    'react/no-unused-prop-types': 'off',
+    'react/react-in-jsx-scope': 'off',
+    'react/require-default-props': 'off',
+    '@next/next/no-img-element': 'off',
+    '@typescript-eslint/naming-convention': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        varsIgnorePattern: '^_',
+        args: 'none',
+        ignoreRestSiblings: true,
+      },
+    ],
+  },
+  overrides: [],
+  ignorePatterns: [
+    '**/*.js',
+    '**/*.json',
+    'node_modules',
+    'public',
+    'styles',
+    '.next',
+    'coverage',
+    'dist',
+  ],
+};
