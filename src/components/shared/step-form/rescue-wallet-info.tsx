@@ -30,8 +30,13 @@ export const RescueWalletInfo = () => {
         <FloatingLabelInput
           id="rescuerPrivateKey"
           label="Wallet Private Key (Rescuer)"
-          // TODO: Add regex for private key
-          {...register('rescuerPrivateKey', { required: 'Required' })}
+          {...register('rescuerPrivateKey', {
+            required: 'Required',
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{64}$/,
+              message: 'Invalid private key format',
+            },
+          })}
           infoText={
             <p className="text-xxs mt-1 flex items-center gap-1 opacity-70">
               <IconInfoCircle className="h-4 w-4" />

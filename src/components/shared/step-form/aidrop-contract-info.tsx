@@ -19,15 +19,26 @@ export const AirdropContractInfo = () => {
         <FloatingLabelInput
           id="airdropContractAddress"
           label="Airdrop Contract Address"
-          // TODO: Add regex for contract address
-          {...register('airdropContractAddress', { required: 'Required' })}
+          {...register('airdropContractAddress', {
+            required: 'Required',
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{40}$/,
+              message: 'Invalid contract address format',
+            },
+          })}
           error={errors.airdropContractAddress?.message}
         />
         <FloatingLabelInput
           id="callData"
           label="Call Data"
-          // TODO: Add regex for call data
-          {...register('callData', { required: 'Required' })}
+          // TODO: cross-check regex for this
+          {...register('callData', {
+            required: 'Required',
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{64}$/,
+              message: 'Invalid call data format',
+            },
+          })}
           error={errors.callData?.message}
         />
       </div>

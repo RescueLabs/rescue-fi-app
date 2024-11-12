@@ -21,8 +21,13 @@ export const VictimWalletInfo = () => {
         <FloatingLabelInput
           id="victimPrivateKey"
           label="Wallet Private Key (Victim)"
-          // TODO: Add regex for private key
-          {...register('victimPrivateKey', { required: 'Required' })}
+          {...register('victimPrivateKey', {
+            required: 'Required',
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{64}$/,
+              message: 'Invalid private key format',
+            },
+          })}
           infoText={
             <p className="text-xxs mt-1 flex items-center gap-1 opacity-70">
               <IconInfoCircle className="h-4 w-4" />
@@ -34,14 +39,25 @@ export const VictimWalletInfo = () => {
         <FloatingLabelInput
           id="tokenAddress"
           label="Token Address"
-          // TODO: Add regex for token address
-          {...register('tokenAddress', { required: 'Required' })}
+          {...register('tokenAddress', {
+            required: 'Required',
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{40}$/,
+              message: 'Invalid token address format',
+            },
+          })}
           error={errors.tokenAddress?.message}
         />
         <FloatingLabelInput
           id="amountToSalvage"
           label="Amount to Salvage"
-          {...register('amountToSalvage', { required: 'Required' })}
+          {...register('amountToSalvage', {
+            required: 'Required',
+            pattern: {
+              value: /^\d+$/,
+              message: 'Only numbers are allowed',
+            },
+          })}
           error={errors.amountToSalvage?.message}
           infoText={
             <p className="text-xxs mt-1 flex items-center gap-1 opacity-70">
