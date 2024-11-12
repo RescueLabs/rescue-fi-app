@@ -18,11 +18,31 @@ const config = {
       },
     },
     extend: {
-      colors: {},
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+      spacing: {
+        4.5: '18px',
+        6.5: '26px',
+        10.5: '42px',
+        15: '60px',
+        13: '52px',
+        18: '72px',
+        19: '76px',
+        39: '156px',
+      },
+      colors: {
+        background: {
+          light: '#e7ebf9',
+          dark: '#15181d',
+        },
+        foreground: {
+          light: '#fff',
+          dark: '#000',
+        },
+        'in-black': {
+          30: '#171a1c4d',
+          DEFAULT: '#1B1F23',
+          300: '#1E2227',
+          500: '#171A1C',
+        },
       },
       keyframes: {
         'accordion-down': {
