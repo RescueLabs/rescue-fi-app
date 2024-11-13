@@ -84,7 +84,7 @@ export const DashboardSidebar = () => {
               transition={{
                 delay: !open ? -1 : 0.15,
               }}
-              className="-ml-2.5 mb-0.5 w-[146px] text-xs font-semibold text-black dark:text-white"
+              className="-ml-4 mb-0.5 w-[146px] text-xs font-semibold text-black dark:text-white"
             >
               escueFi
             </motion.span>
