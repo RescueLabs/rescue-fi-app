@@ -39,10 +39,10 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For questions or suggestions, please contact us at [support@rescue.fi](mailto:support@rescue.fi).
+For questions or suggestions, please contact us at [labs@rescuefi.xyz](mailto:labs@rescuefi.xyz).
 
 ## Support the Project
 
 If you find RescueFi helpful, consider supporting the project and starring the repo:
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/rescuefi)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/purple_img.png)](https://buymeacoffee.com/rescuefilabs)
