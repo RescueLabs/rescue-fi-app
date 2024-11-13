@@ -2,14 +2,13 @@ import { Onest } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
+import { AppQueryClientProvider } from '@/components/layout/query-client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 
 import type { Metadata } from 'next';
-
-// import { AppQueryClientProvider } from '@/components/layout/QueryClientProvider';
 
 import './globals.css';
 
@@ -57,23 +56,24 @@ const RootLayout = ({
     <head />
     <body className={cn(onest.variable)}>
       <NextTopLoader showSpinner={false} />
-      {/* <AppQueryClientProvider> */}
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <ScrollArea className="h-screen w-screen">
-          <div className="w-full bg-transparent px-0 py-0 md:p-4">
-            <div
-              className={cn(
-                'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
-              )}
-            >
-              <DashboardSidebar />
-              <main className="flex flex-1 pt-[60px] md:pt-0">{children}</main>
+      <AppQueryClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ScrollArea className="h-screen w-screen">
+            <div className="w-full bg-transparent px-0 py-0 md:p-4">
+              <div
+                className={cn(
+                  'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
+                )}
+              >
+                <DashboardSidebar />
+                <main className="flex flex-1 pt-[60px] md:pt-0">
+                  {children}
+                </main>
+              </div>
             </div>
-          </div>
-        </ScrollArea>
-      </ThemeProvider>
-      {/* </AppQueryClientProvider> */}
-
+          </ScrollArea>
+        </ThemeProvider>
+      </AppQueryClientProvider>
       <Toaster />
     </body>
   </html>
