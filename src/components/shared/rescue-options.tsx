@@ -28,11 +28,11 @@ export const RescueOptions: FC<RescueOptionsProps> = ({ rescueOptions }) => (
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
     transition={{ duration: 1, delayChildren: 0.5 }}
-    className="flex h-full flex-col px-2 py-4 md:py-12"
+    className="mb-3 flex flex-col px-2 py-8 md:py-12"
   >
-    <CardHeader className="mb-8 flex flex-col items-center gap-y-20">
+    <CardHeader className="mb-8 flex flex-col items-center gap-y-10">
       <CardTitle>
-        <SidebarLogo className="h-20 w-20" />
+        <SidebarLogo className="ml-3 h-20 w-20" />
       </CardTitle>
 
       <div className="space-y-2 px-6 text-center text-gray-800 dark:text-white">
@@ -55,7 +55,7 @@ export const RescueOptions: FC<RescueOptionsProps> = ({ rescueOptions }) => (
         >
           <button
             className={cn(
-              'group flex w-full flex-wrap items-center justify-between gap-2 rounded-md bg-white px-4 py-3 hover:shadow hover:shadow-purple-200 dark:bg-in-black-300 min-[410px]:flex-nowrap',
+              'group flex w-full flex-wrap items-center justify-between gap-2 rounded-md bg-white px-4 py-3 hover:shadow hover:shadow-purple-200 dark:bg-in-black-300 min-[325px]:flex-nowrap min-[410px]:flex-nowrap',
             )}
           >
             {option.icon}

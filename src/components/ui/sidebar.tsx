@@ -8,9 +8,11 @@ import {
 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link, { LinkProps } from 'next/link';
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect } from 'react';
 
 import { cn } from '@/lib/utils';
+
+import { SidebarLogo } from '../shared/icons/sidebar-logo';
 
 import { Button } from './button';
 
@@ -112,14 +114,32 @@ export const MobileSidebar = ({
 }) => {
   const { open, setOpen } = useSidebar();
 
+  const handleLinkClick = (ev: MouseEvent): any => {
+    const isLink = (ev.target as HTMLElement).closest('a');
+    if (isLink) {
+      setOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('click', handleLinkClick);
+
+    return () => document.removeEventListener('click', handleLinkClick);
+  }, [open]);
+
   return (
     <div
       className={cn(
-        'fixed left-0 top-0 z-50 flex h-10 w-full flex-row items-center justify-between bg-white/60 px-4 py-4 dark:bg-in-black-300/60 md:hidden',
+        'fixed left-0 top-0 z-50 flex h-10 w-full flex-row items-center justify-between rounded-full md:hidden',
       )}
       {...props}
     >
-      <div className="z-20 flex w-full justify-end">
+      <div className="z-20 mx-auto mt-8 flex h-10 w-[95%] items-center justify-between rounded-full bg-white/60 px-4 py-4 dark:bg-in-black-300/60">
+        <Link href="/" className="flex items-center">
+          <SidebarLogo className="mt-3 h-10 w-10" />
+          <span className="-ml-4 mt-2 text-sm">escueFi</span>
+        </Link>
+
         <IconMenu2
           className="text-neutral-800 dark:text-neutral-200"
           onClick={() => setOpen(!open)}

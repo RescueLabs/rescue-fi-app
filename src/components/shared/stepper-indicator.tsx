@@ -14,12 +14,12 @@ export const StepperIndicator: FC<StepperIndicatorProps> = ({
   steps,
 }) => {
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex w-full max-w-[500px] items-center justify-center">
       {steps.map((step) => (
         <Fragment key={step}>
           <div
             className={clsx(
-              'm-[5px] flex h-[40px] w-[40px] items-center justify-center rounded-full border-[2px]',
+              'm-[5px] flex h-8 w-8 items-center justify-center rounded-full border-[2px] sm:h-10 sm:w-10',
               step > activeStep &&
                 'border-slate-800/50 bg-white text-in-black-300 dark:border-slate-200/50 dark:bg-in-black-300 dark:text-white',
               step < activeStep &&
@@ -30,7 +30,7 @@ export const StepperIndicator: FC<StepperIndicatorProps> = ({
             {step >= activeStep ? step : <IconCheck className="h-5 w-5" />}
           </div>
           {step !== steps.length && (
-            <div className="flex h-[2px] w-[100px] items-center justify-center">
+            <div className="flex h-[2px] w-[40px] items-center justify-center min-[350px]:w-[60px] sm:w-[100px]">
               <Separator
                 orientation="horizontal"
                 className={clsx(

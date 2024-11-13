@@ -20,8 +20,8 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: 'Innovity',
-  description: 'Welcome to Innovity AI',
+  title: 'RescueFi',
+  description: 'Rescue your locked funds',
   manifest: '/manifest.webmanifest',
   icons: [
     {
@@ -31,25 +31,19 @@ export const metadata: Metadata = {
     },
     {
       rel: 'icon',
-      type: 'image/png',
-      sizes: '32x32',
-      url: '/favicons/favicon-32x32.png',
+      type: 'image/svg+xml',
+      url: '/favicons/favicon.svg',
     },
     {
       rel: 'icon',
       type: 'image/png',
-      sizes: '16x16',
-      url: '/favicons/favicon-16x16.png',
+      sizes: '96x96',
+      url: '/favicons/favicon-96x96.png',
     },
     {
       rel: 'apple-touch-icon',
       sizes: '180x180',
       url: '/favicons/apple-touch-icon.png',
-    },
-    {
-      rel: 'mask-icon',
-      color: '#333333',
-      url: '/favicons/safari-pinned-tab.svg',
     },
   ],
 };

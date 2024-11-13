@@ -38,8 +38,8 @@ export const RescueWalletInfo = () => {
             },
           })}
           infoText={
-            <p className="text-xxs mt-1 flex items-center gap-1 opacity-70">
-              <IconInfoCircle className="h-4 w-4" />
+            <p className="text-xxs mt-1 flex gap-1 break-all opacity-70">
+              <IconInfoCircle className="h-4 w-4 min-w-4" />
               Address: 0x0000000000000000000000000000000000000000
             </p>
           }
