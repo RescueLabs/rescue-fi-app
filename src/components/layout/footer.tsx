@@ -9,7 +9,7 @@ import { Button } from '../ui/button';
 export const Footer = () => {
   return (
     <footer className="absolute bottom-4 left-0 flex w-full flex-col items-center">
-      <section className="z-[12] flex min-h-10 w-[95%] items-center justify-between rounded-full border border-slate-800/50 bg-white/80 px-4 py-2 dark:border-slate-200/50 dark:bg-in-black-300/80 md:ml-[125px] md:w-[calc(100%-250px)]">
+      <section className="z-[12] flex min-h-10 w-[95%] items-center justify-between rounded-full border border-slate-800/50 bg-white/80 px-4 py-2 dark:border-slate-200/50 dark:bg-in-black-300/80 md:ml-[200px] md:w-[calc(100%-400px)]">
         <div className="flex items-center gap-x-5">
           <Link
             href="https://github.com/RescueLabs/rescue-fi-app"
