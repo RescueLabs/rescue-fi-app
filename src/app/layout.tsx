@@ -2,6 +2,7 @@ import { Onest } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
+import { QuestionsLinkButton } from '@/components/shared/questions-link-button';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
@@ -68,6 +69,7 @@ const RootLayout = ({
             >
               <DashboardSidebar />
               <main className="flex flex-1 pt-[60px] md:pt-0">{children}</main>
+              <QuestionsLinkButton />
             </div>
           </div>
         </ScrollArea>
