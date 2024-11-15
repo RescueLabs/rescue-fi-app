@@ -6,7 +6,7 @@ import { Button } from '../ui/button';
 
 export const QuestionsLinkButton = () => {
   return (
-    <Link href="/faqs" className="fixed bottom-4 right-4">
+    <Link href="/faqs" className="">
       <Button className="group flex h-8 w-[34px] items-center justify-end gap-1.5 whitespace-nowrap !rounded-full px-2 transition-[width] duration-200 ease-in-out hover:w-[110px]">
         <span className="opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           Questions
