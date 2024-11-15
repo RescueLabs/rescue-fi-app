@@ -45,7 +45,7 @@ export const RescueOptions: FC<RescueOptionsProps> = ({ rescueOptions }) => (
       </div>
     </CardHeader>
 
-    <CardContent className="flex w-full flex-col items-center gap-y-4">
+    <CardContent className="mb-12 flex w-full flex-col items-center gap-y-4">
       {rescueOptions.map((option) => (
         <Link
           href={option.href}

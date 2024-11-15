@@ -6,6 +6,10 @@ const nextConfig = {
         hostname: 'assets.aceternity.com',
         protocol: 'https',
       },
+      {
+        hostname: 'www.buymeacoffee.com',
+        protocol: 'https',
+      },
     ],
   },
 };
