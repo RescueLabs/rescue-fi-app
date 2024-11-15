@@ -2,7 +2,7 @@ import { Onest } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
-import { QuestionsLinkButton } from '@/components/shared/questions-link-button';
+import { Footer } from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
@@ -57,7 +57,7 @@ const RootLayout = ({
   <html lang="en" suppressHydrationWarning>
     <head />
     <body className={cn(onest.variable)}>
-      <NextTopLoader showSpinner={false} />
+      <NextTopLoader showSpinner={false} color="#a855f7" />
       {/* <AppQueryClientProvider> */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <ScrollArea className="h-screen w-screen">
@@ -68,8 +68,11 @@ const RootLayout = ({
               )}
             >
               <DashboardSidebar />
-              <main className="flex flex-1 pt-[60px] md:pt-0">{children}</main>
-              <QuestionsLinkButton />
+              <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                {children}
+
+                <Footer />
+              </main>
             </div>
           </div>
         </ScrollArea>

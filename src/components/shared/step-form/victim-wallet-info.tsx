@@ -66,7 +66,7 @@ export const VictimWalletInfo = () => {
             </p>
           }
           extraElement={
-            <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 items-center gap-3">
+            <div className="absolute right-3 top-1/2 z-[5] flex -translate-y-1/2 items-center gap-3">
               <p className="text-xxs text-gray-600 dark:text-gray-400">USD</p>
 
               <Button
