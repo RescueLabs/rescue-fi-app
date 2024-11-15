@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { createPublicClient, http } from 'viem';
 import { LocalAccount } from 'viem/accounts';
-import { mainnet } from 'viem/chains';
+import { sepolia } from 'viem/chains';
 
 export const useWalletNonce = (account: LocalAccount) => {
   const publicClient = createPublicClient({
-    chain: mainnet,
+    chain: sepolia,
     transport: http(),
   });
 

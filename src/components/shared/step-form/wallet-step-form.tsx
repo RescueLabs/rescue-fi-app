@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useSendBundle } from '@/hooks/use-send-bundle';
 import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
 import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
 
@@ -40,10 +39,6 @@ export const WalletStepForm = () => {
   const methods = useForm<StepperFormValues>({
     mode: 'onTouched',
   });
-
-  useSendBundle(
-    '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
-  );
 
   const {
     trigger,

@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+// import { useSendBundle } from '@/hooks/use-send-bundle';
 import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
 import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
 
@@ -134,6 +135,27 @@ export const AirdropStepForm = () => {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+
+  // const { getSimulationResult, getBlockNumber, signedTransaction, nonce } =
+  //   useSendBundle(
+  //     '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
+  //   );
+
+  // useEffect(() => {
+  //   (async () => {
+  //     console.log(nonce, 'nonce');
+  //     if (!signedTransaction || nonce == undefined) return;
+
+  //     console.log(nonce, 'nonce after', signedTransaction);
+  //     const blockNumber = await getBlockNumber();
+  //     console.log('blockNumber', blockNumber);
+  //     const simulationResult = await getSimulationResult(
+  //       '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
+  //       blockNumber,
+  //     );
+  //     console.log('simulationResult', simulationResult);
+  //   })();
+  // }, [signedTransaction, nonce]);
 
   return (
     <AnimatePresence mode="wait">

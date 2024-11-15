@@ -22,8 +22,8 @@ export const useSignTransaction = (
         nonce,
         gasPrice,
         data,
-        chainId: 1,
-        gasLimit,
+        chainId: 11155111,
+        gas: gasLimit,
       });
       setSignedTransaction(_signedTransaction);
     })();
