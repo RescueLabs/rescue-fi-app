@@ -21,6 +21,10 @@ export const AirdropContractInfo = () => {
           label="Airdrop Contract Address"
           {...register('airdropContractAddress', {
             required: 'Required',
+            maxLength: {
+              value: 42,
+              message: 'Invalid contract address format',
+            },
             pattern: {
               value: /^(0x)?[0-9a-fA-F]{40}$/,
               message: 'Invalid contract address format',
@@ -34,6 +38,10 @@ export const AirdropContractInfo = () => {
           // TODO: cross-check regex for this
           {...register('callData', {
             required: 'Required',
+            maxLength: {
+              value: 66,
+              message: 'Invalid call data format',
+            },
             pattern: {
               value: /^(0x)?[0-9a-fA-F]{64}$/,
               message: 'Invalid call data format',

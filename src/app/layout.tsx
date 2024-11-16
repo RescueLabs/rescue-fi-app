@@ -3,14 +3,14 @@ import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
+import { AppQueryClientProvider } from '@/components/layout/query-client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 
 import type { Metadata } from 'next';
-
-// import { AppQueryClientProvider } from '@/components/layout/QueryClientProvider';
 
 import './globals.css';
 
@@ -58,27 +58,28 @@ const RootLayout = ({
     <head />
     <body className={cn(onest.variable)}>
       <NextTopLoader showSpinner={false} color="#a855f7" />
-      {/* <AppQueryClientProvider> */}
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <ScrollArea className="h-screen w-screen">
-          <div className="w-full bg-transparent px-0 py-0 md:p-4">
-            <div
-              className={cn(
-                'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
-              )}
-            >
-              <DashboardSidebar />
-              <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
-                {children}
+      <AppQueryClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SidebarProvider>
+            <ScrollArea className="h-screen w-screen">
+              <div className="w-full bg-transparent px-0 py-0 md:p-4">
+                <div
+                  className={cn(
+                    'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
+                  )}
+                >
+                  <DashboardSidebar />
+                  <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                    {children}
 
-                <Footer />
-              </main>
-            </div>
-          </div>
-        </ScrollArea>
-      </ThemeProvider>
-      {/* </AppQueryClientProvider> */}
-
+                    <Footer />
+                  </main>
+                </div>
+              </div>
+            </ScrollArea>
+          </SidebarProvider>
+        </ThemeProvider>
+      </AppQueryClientProvider>
       <Toaster />
     </body>
   </html>

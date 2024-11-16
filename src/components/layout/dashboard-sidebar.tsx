@@ -10,10 +10,14 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import React, { useState } from 'react';
 
 import { SidebarLogo } from '@/components/shared/icons/sidebar-logo';
-import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar';
+import {
+  Sidebar,
+  SidebarBody,
+  SidebarLink,
+  useSidebar,
+} from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 import { ThemeSwitch } from '../ui/theme-switch';
@@ -49,12 +53,12 @@ const links: {
 ];
 
 export const DashboardSidebar = () => {
-  const [open, setOpen] = useState<boolean>(false);
   const pathname = usePathname();
+  const { open } = useSidebar();
   const { setTheme, theme } = useTheme();
 
   return (
-    <Sidebar open={open} setOpen={setOpen}>
+    <Sidebar>
       <SidebarBody className="justify-between gap-10">
         <div className="flex flex-1 flex-col gap-y-2 overflow-x-hidden">
           <Link
