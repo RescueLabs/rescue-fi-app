@@ -41,14 +41,13 @@ export const AirdropStepForm = () => {
   const [formRescueFundsLoadingStatus, setFormRescueFundsLoadingStatus] =
     useState<FormRescueFundsLoadingStatus>('loading');
   const methods = useForm<StepperFormValues>({
-    mode: 'onTouched',
+    mode: 'onChange',
   });
 
   const {
-    trigger,
     handleSubmit,
     setError,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isValid },
   } = methods;
 
   // focus errored input on submit
@@ -128,8 +127,7 @@ export const AirdropStepForm = () => {
   };
 
   const handleNext = async () => {
-    const isStepValid = await trigger(undefined, { shouldFocus: true });
-    if (isStepValid) setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    if (isValid) setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
