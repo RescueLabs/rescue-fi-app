@@ -4,14 +4,14 @@ import { JsonRpcProvider } from 'ethers';
 import { useCallback, useMemo } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 
+import { RPC_URL } from '@/lib/constants';
+
 import { useGasPrice } from './use-gas-Price';
 import { useSignTransaction } from './use-sign-transaction';
 import { useWalletNonce } from './use-wallet-nonce';
 
-const rpcUrl = 'https://ethereum-sepolia-rpc.publicnode.com';
-
 export const useSendBundle = (privateKey: `0x${string}`) => {
-  const provider = useMemo(() => new JsonRpcProvider(rpcUrl), []);
+  const provider = useMemo(() => new JsonRpcProvider(RPC_URL), []);
 
   const account = privateKeyToAccount(privateKey);
 

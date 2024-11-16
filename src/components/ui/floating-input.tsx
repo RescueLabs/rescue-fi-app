@@ -47,13 +47,19 @@ const FloatingLabelInput = React.forwardRef<
     label?: string;
     error?: string;
     infoText?: React.ReactNode;
+    className?: string;
     extraElement?: React.ReactNode;
   }
 >(({ id, label, error, infoText, extraElement, ...props }, ref) => {
   return (
     <div>
       <div className="relative">
-        <FloatingInput ref={ref} id={id} {...props} />
+        <FloatingInput
+          ref={ref}
+          id={id}
+          {...props}
+          className={cn(props?.className || '', error && '!border-red-500')}
+        />
         <FloatingLabel htmlFor={id}>{label}</FloatingLabel>
         {extraElement}
       </div>

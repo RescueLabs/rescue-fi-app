@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/footer';
 import { AppQueryClientProvider } from '@/components/layout/query-client-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 
@@ -59,22 +60,24 @@ const RootLayout = ({
       <NextTopLoader showSpinner={false} color="#a855f7" />
       <AppQueryClientProvider>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ScrollArea className="h-screen w-screen">
-            <div className="w-full bg-transparent px-0 py-0 md:p-4">
-              <div
-                className={cn(
-                  'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
-                )}
-              >
-                <DashboardSidebar />
-                <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
-                  {children}
+          <SidebarProvider>
+            <ScrollArea className="h-screen w-screen">
+              <div className="w-full bg-transparent px-0 py-0 md:p-4">
+                <div
+                  className={cn(
+                    'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
+                  )}
+                >
+                  <DashboardSidebar />
+                  <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                    {children}
 
-                  <Footer />
-                </main>
+                    <Footer />
+                  </main>
+                </div>
               </div>
-            </div>
-          </ScrollArea>
+            </ScrollArea>
+          </SidebarProvider>
         </ThemeProvider>
       </AppQueryClientProvider>
       <Toaster />
