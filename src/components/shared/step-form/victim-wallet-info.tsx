@@ -126,7 +126,7 @@ export const VictimWalletInfo = () => {
             required: 'Required',
             maxLength: {
               value: 42,
-              message: 'Invalid  address format',
+              message: 'Invalid address format',
             },
             pattern: {
               value: /^(0x)?[0-9a-fA-F]{40}$/,
@@ -188,6 +188,22 @@ export const VictimWalletInfo = () => {
               </Button>
             </div>
           }
+        />
+        <FloatingLabelInput
+          id="receiverWalletAddress"
+          label="Receiver Wallet Address e.g. 0x..."
+          {...register('receiverWalletAddress', {
+            required: 'Required',
+            maxLength: {
+              value: 42,
+              message: 'Invalid address format',
+            },
+            pattern: {
+              value: /^(0x)?[0-9a-fA-F]{40}$/,
+              message: 'Invalid address format',
+            },
+          })}
+          error={errors.receiverWalletAddress?.message}
         />
       </div>
     </div>
