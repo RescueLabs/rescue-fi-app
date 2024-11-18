@@ -24,7 +24,7 @@ export const useGasPrice = () => {
   });
 
   let gasPrice = BigInt(
-    parseFloat(data?.result.FastGasPrice || '0') * 1_000_000_000,
+    Math.round(parseFloat(data?.result.FastGasPrice || '0') * 1_000_000_000),
   );
   gasPrice *= BigInt(110) / BigInt(100);
 

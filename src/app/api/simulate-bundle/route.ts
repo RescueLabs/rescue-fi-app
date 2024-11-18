@@ -9,8 +9,6 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
   // connect to MEV-Share on mainnet
   const mevShareClient = getSepoliaMevShareClient(privateKey);
 
-  console.log(blockNumber, blockNumber + 100, blockNumber + 400);
-
   let result = await mevShareClient.simulateBundle({
     body: bundle,
     inclusion: {
@@ -24,8 +22,6 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
       typeof value === 'bigint' ? value.toString() : value,
     ),
   );
-
-  console.log(result);
 
   return NextResponse.json({ data: result });
 };

@@ -3,13 +3,22 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
+import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
+import {
+  MAX_BLOCK_NUMBER,
+  SEPOLIA_RECEIVER_ADDRESS,
+  SEPOLIA_RESCUER_PRIVATE_KEY,
+  SEPOLIA_TOKEN_ADDRESS,
+  SEPOLIA_VICTIM_PRIVATE_KEY,
+} from '@/lib/constants';
 import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
 import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
 
@@ -130,10 +139,51 @@ export const WalletStepForm = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  const estimateRescueTokenGas = useEstimateRescueTokenGas(
+    SEPOLIA_TOKEN_ADDRESS,
+  );
+  const [gas, setGas] = useState<{
+    gas: bigint;
+    gasPrice: bigint;
+    gasInWei: bigint;
+  }>();
+
+  const { sendBundle, loading, success, failed, watchBundle } =
+    useRescueTokenBundle({
+      victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
+      rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
+      receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
+      tokenAddress: SEPOLIA_TOKEN_ADDRESS,
+      amount: BigInt('1000000000000000000'),
+      gasPrice: gas?.gasPrice ?? BigInt(0),
+      gas: gas?.gas ?? BigInt(0),
+    });
+
+  useEffect(() => {
+    const calculateGas = async () => {
+      const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
+      setGas({ gas: _gas + BigInt(21000), gasPrice, gasInWei }); // 21000 is the gas for sending the gas to victim
+    };
+    calculateGas();
+  }, [estimateRescueTokenGas]);
+
+  useEffect(() => {
+    console.log('loading', loading);
+    console.log('success', success);
+    console.log('failed', failed);
+  }, [loading, success, failed]);
+
+  const sendBundleAndWatch = useCallback(async () => {
+    const [_, txHashes] = await sendBundle();
+    watchBundle(txHashes[0] as `0x${string}`, MAX_BLOCK_NUMBER);
+  }, [sendBundle, watchBundle]);
+
   return (
     <AnimatePresence mode="wait">
       <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-        <p className="text-2xl font-semibold">Rescue Wallet Funds</p>
+        <p className="text-2xl font-semibold" onClick={sendBundleAndWatch}>
+          Rescue Wallet Funds
+        </p>
 
         <motion.div
           key={activeStep}

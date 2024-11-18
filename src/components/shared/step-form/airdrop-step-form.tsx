@@ -3,14 +3,26 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-// import { useSendBundle } from '@/hooks/use-send-bundle';
+import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
+import { useEstimateClaimAirdropGas } from '@/hooks/use-estimate-claim-airdrop-gas';
+import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
+import {
+  MAX_BLOCK_NUMBER,
+  SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+  SEPOLIA_AIRDROP_DATA,
+  SEPOLIA_RECEIVER_ADDRESS,
+  SEPOLIA_RESCUE_TOKEN_AMOUNT,
+  SEPOLIA_TOKEN_ADDRESS,
+  SEPOLIA_RESCUER_PRIVATE_KEY,
+  SEPOLIA_VICTIM_PRIVATE_KEY,
+} from '@/lib/constants';
 import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
 import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
 
@@ -134,31 +146,69 @@ export const AirdropStepForm = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  // const { getSimulationResult, getBlockNumber, signedTransaction, nonce } =
-  //   useSendBundle(
-  //     '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
-  //   );
+  const estimateRescueTokenGas = useEstimateRescueTokenGas(
+    SEPOLIA_TOKEN_ADDRESS,
+  );
+  const estimateClaimAirdropGas = useEstimateClaimAirdropGas(
+    SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+    SEPOLIA_AIRDROP_DATA.slice(0, 10),
+  );
+  const [gas, setGas] = useState<{
+    gas: bigint;
+    txGases: bigint[];
+    gasPrice: bigint;
+    gasInWei: bigint;
+  }>();
 
-  // useEffect(() => {
-  //   (async () => {
-  //     console.log(nonce, 'nonce');
-  //     if (!signedTransaction || nonce == undefined) return;
+  const { sendBundle, loading, success, failed, watchBundle } =
+    useClaimAirdropBundle({
+      victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
+      rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
+      receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
+      tokenAddress: SEPOLIA_TOKEN_ADDRESS,
+      airdropContractAddress: SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+      data: SEPOLIA_AIRDROP_DATA,
+      txGases: gas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
+      amount: SEPOLIA_RESCUE_TOKEN_AMOUNT,
+      gasPrice: gas?.gasPrice ?? BigInt(0),
+      gas: gas?.gas ?? BigInt(0),
+    });
 
-  //     console.log(nonce, 'nonce after', signedTransaction);
-  //     const blockNumber = await getBlockNumber();
-  //     console.log('blockNumber', blockNumber);
-  //     const simulationResult = await getSimulationResult(
-  //       '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
-  //       blockNumber,
-  //     );
-  //     console.log('simulationResult', simulationResult);
-  //   })();
-  // }, [signedTransaction, nonce]);
+  useEffect(() => {
+    const calculateGas = async () => {
+      const {
+        gas: sendTokenGas,
+        gasPrice,
+        gasInWei,
+      } = await estimateRescueTokenGas();
+      const { gas: claimAirdropGas } = await estimateClaimAirdropGas();
+      setGas({
+        gas: sendTokenGas + claimAirdropGas + BigInt(21000),
+        txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
+        gasPrice,
+        gasInWei,
+      });
+    };
+    calculateGas();
+  }, [estimateClaimAirdropGas, estimateRescueTokenGas]);
+
+  useEffect(() => {
+    console.log('loading', loading);
+    console.log('success', success);
+    console.log('failed', failed);
+  }, [loading, success, failed]);
+
+  const sendBundleAndWatch = useCallback(async () => {
+    const [_, txHashes] = await sendBundle();
+    watchBundle(txHashes[0] as `0x${string}`, MAX_BLOCK_NUMBER);
+  }, [sendBundle, watchBundle]);
 
   return (
     <AnimatePresence mode="wait">
       <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-        <p className="text-2xl font-semibold">Rescue Airdrop Funds</p>
+        <p onClick={sendBundleAndWatch} className="text-2xl font-semibold">
+          Rescue Airdrop Funds
+        </p>
 
         <motion.div
           key={activeStep}
