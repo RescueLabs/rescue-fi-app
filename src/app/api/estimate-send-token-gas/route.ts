@@ -25,7 +25,7 @@ export const GET = async (req: NextRequest) => {
   }, 0);
 
   let averageGasUsed = gasUsed / totalSample;
-  averageGasUsed = Math.round(averageGasUsed * 1.2); // increase by 20%
+  averageGasUsed = Math.round(averageGasUsed * 1.1); // increase by 10%
 
   if (!averageGasUsed) {
     averageGasUsed = 8000;
