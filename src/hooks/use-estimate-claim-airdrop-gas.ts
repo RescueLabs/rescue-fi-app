@@ -8,16 +8,20 @@ import { useGasPrice } from './use-gas-Price';
 const publicClient = getPublicClient();
 
 // returns gas for rescuing wallet fund in WEI
-export const useEstimateRescueTokenGas = (tokenAddress: string) => {
+export const useEstimateClaimAirdropGas = (
+  airdropContractAddress: string,
+  methodId: string,
+) => {
   // todo: make sure this updates
   const { gasPrice } = useGasPrice();
 
   const estimateGas = useCallback(async () => {
     const latestBlock = await publicClient.getBlockNumber();
-    const response = await axios.get('/api/estimate-send-token-gas', {
+    const response = await axios.get('/api/estimate-claim-airdrop-gas', {
       params: {
-        tokenAddress,
+        airdropContractAddress,
         latestBlock: String(latestBlock),
+        methodId,
       },
     });
 
@@ -27,7 +31,7 @@ export const useEstimateRescueTokenGas = (tokenAddress: string) => {
       gas,
       gasPrice,
     };
-  }, [tokenAddress, gasPrice]);
+  }, [airdropContractAddress, methodId, gasPrice]);
 
   return estimateGas;
 };

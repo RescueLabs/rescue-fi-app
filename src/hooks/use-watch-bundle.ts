@@ -27,5 +27,13 @@ export const useWatchBundle = () => {
     [],
   );
 
-  return { watchBundle, loading, failed, success, setLoading };
+  return {
+    watchBundle,
+    loading,
+    failed,
+    success,
+    setLoading,
+    setSuccess,
+    setFailed,
+  };
 };

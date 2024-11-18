@@ -10,9 +10,19 @@ import { toast } from 'sonner';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
+import { useEstimateClaimAirdropGas } from '@/hooks/use-estimate-claim-airdrop-gas';
 import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
-import { useSendWalletBundle } from '@/hooks/use-send-wallet-bundle';
-import { MAX_BLOCK_NUMBER } from '@/lib/constants';
+import {
+  MAX_BLOCK_NUMBER,
+  SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+  SEPOLIA_AIRDROP_DATA,
+  SEPOLIA_RECEIVER_ADDRESS,
+  SEPOLIA_RESCUE_TOKEN_AMOUNT,
+  SEPOLIA_TOKEN_ADDRESS,
+  SEPOLIA_RESCUER_PRIVATE_KEY,
+  SEPOLIA_VICTIM_PRIVATE_KEY,
+} from '@/lib/constants';
 import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
 import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
 
@@ -137,35 +147,50 @@ export const AirdropStepForm = () => {
   };
 
   const estimateRescueTokenGas = useEstimateRescueTokenGas(
-    '0xaE581DcDA061032677dd10aDe0b9F18268f02509',
+    SEPOLIA_TOKEN_ADDRESS,
+  );
+  const estimateClaimAirdropGas = useEstimateClaimAirdropGas(
+    SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+    SEPOLIA_AIRDROP_DATA.slice(0, 10),
   );
   const [gas, setGas] = useState<{
     gas: bigint;
+    txGases: bigint[];
     gasPrice: bigint;
     gasInWei: bigint;
   }>();
 
   const { sendBundle, loading, success, failed, watchBundle } =
-    useSendWalletBundle({
-      victimPrivateKey:
-        '0x394b25d59562617eb109c683eb54f79d6a6f696e434cc27103c03850ff41d4ee',
-      rescuerPrivateKey:
-        '0x4e53e9edbfe7f327802a9022c4808120f081129a3fc91b76a12b1abff4e2e917',
-      receiverAddress: '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E',
-      tokenAddress: '0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d',
-      amount: BigInt('1000000000000000000'),
+    useClaimAirdropBundle({
+      victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
+      rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
+      receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
+      tokenAddress: SEPOLIA_TOKEN_ADDRESS,
+      airdropContractAddress: SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+      data: SEPOLIA_AIRDROP_DATA,
+      txGases: gas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
+      amount: SEPOLIA_RESCUE_TOKEN_AMOUNT,
       gasPrice: gas?.gasPrice ?? BigInt(0),
       gas: gas?.gas ?? BigInt(0),
     });
 
   useEffect(() => {
     const calculateGas = async () => {
-      const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
-      console.log('gas', _gas, gasPrice, gasInWei);
-      setGas({ gas: _gas, gasPrice, gasInWei });
+      const {
+        gas: sendTokenGas,
+        gasPrice,
+        gasInWei,
+      } = await estimateRescueTokenGas();
+      const { gas: claimAirdropGas } = await estimateClaimAirdropGas();
+      setGas({
+        gas: sendTokenGas + claimAirdropGas + BigInt(21000),
+        txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
+        gasPrice,
+        gasInWei,
+      });
     };
     calculateGas();
-  }, [estimateRescueTokenGas]);
+  }, [estimateClaimAirdropGas, estimateRescueTokenGas]);
 
   useEffect(() => {
     console.log('loading', loading);

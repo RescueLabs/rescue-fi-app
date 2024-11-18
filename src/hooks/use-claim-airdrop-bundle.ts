@@ -17,12 +17,15 @@ const erc20Interface = new Interface([
 
 const publicClient = getPublicClient();
 
-export const useSendWalletBundle = ({
+export const useClaimAirdropBundle = ({
   victimPrivateKey,
   rescuerPrivateKey,
   receiverAddress,
   tokenAddress,
+  airdropContractAddress,
+  data,
   amount,
+  txGases,
   gasPrice,
   gas,
 }: {
@@ -30,18 +33,30 @@ export const useSendWalletBundle = ({
   rescuerPrivateKey: `0x${string}`;
   receiverAddress: `0x${string}`;
   tokenAddress: `0x${string}`;
+  data: `0x${string}`;
+  airdropContractAddress: `0x${string}`;
   amount: bigint;
   gasPrice: bigint;
   gas: bigint;
+  txGases: bigint[];
 }) => {
-  const { loading, setLoading, watchBundle, success, failed } =
-    useWatchBundle();
+  const {
+    loading,
+    setLoading,
+    watchBundle,
+    success,
+    failed,
+    setSuccess,
+    setFailed,
+  } = useWatchBundle();
 
   const victimAccount = privateKeyToAccount(victimPrivateKey);
   const rescuerAccount = privateKeyToAccount(rescuerPrivateKey);
 
   const sendBundle = useCallback(async () => {
     setLoading(true);
+    setSuccess(false);
+    setFailed(false);
     const victimNonce = await publicClient.getTransactionCount({
       address: victimAccount.address,
     });
@@ -63,24 +78,37 @@ export const useSendWalletBundle = ({
     let etherTx = ethers.Transaction.from(signedTransaction1);
     const txHash1 = keccak256(etherTx.serialized);
 
-    // transaction to send token to receiver
+    // transaction to claim airdrop
     const signedTransaction2 = await victimAccount.signTransaction({
-      to: tokenAddress,
+      to: airdropContractAddress,
       value: BigInt(0),
       nonce: victimNonce,
+      gasPrice,
+      data,
+      gas: txGases[1],
+    });
+    etherTx = ethers.Transaction.from(signedTransaction2);
+    const txHash2 = keccak256(etherTx.serialized);
+
+    // transaction to send token to receiver
+    const signedTransaction3 = await victimAccount.signTransaction({
+      to: tokenAddress,
+      value: BigInt(0),
+      nonce: victimNonce + 1,
       gasPrice,
       data: erc20Interface.encodeFunctionData('transfer', [
         receiverAddress,
         amount,
       ]) as `0x${string}`,
-      gas: gas - BigInt(21000),
+      gas: txGases[2],
     });
-    etherTx = ethers.Transaction.from(signedTransaction2);
-    const txHash2 = keccak256(etherTx.serialized);
+    etherTx = ethers.Transaction.from(signedTransaction3);
+    const txHash3 = keccak256(etherTx.serialized);
 
     const bundle: BundleParams['body'] = [
       { tx: signedTransaction1 ?? '', canRevert: false },
       { tx: signedTransaction2 ?? '', canRevert: false },
+      { tx: signedTransaction3 ?? '', canRevert: false },
     ];
 
     const bundleResult: ISendBundleResult = await axios.post(
@@ -92,15 +120,18 @@ export const useSendWalletBundle = ({
       },
     );
 
-    return [bundleResult.bundleHash, [txHash1, txHash2]];
+    return [bundleResult.bundleHash, [txHash1, txHash2, txHash3]];
   }, [
     victimAccount,
     rescuerAccount,
+    gas,
     gasPrice,
+    airdropContractAddress,
+    data,
+    txGases,
     tokenAddress,
     receiverAddress,
     amount,
-    gas,
     rescuerPrivateKey,
   ]);
 

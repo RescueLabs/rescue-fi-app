@@ -4,9 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { API_KEY } from '@/lib/constants';
 
 export const GET = async (req: NextRequest) => {
-  const tokenAddress = req.nextUrl.searchParams.get('tokenAddress');
+  const airdropContract = req.nextUrl.searchParams.get(
+    'airdropContractAddress',
+  );
   const latestBlock = req.nextUrl.searchParams.get('latestBlock');
-  const etherscanUrl = `https://api-sepolia.etherscan.io/api?apikey=${API_KEY}&module=account&action=txlist&address=${tokenAddress}&sort=desc&endblock=${latestBlock}&startblock=0&offset=1000&page=1`;
+  const methodId = req.nextUrl.searchParams.get('methodId');
+  const etherscanUrl = `https://api-sepolia.etherscan.io/api?apikey=${API_KEY}&module=account&action=txlist&address=${airdropContract}&sort=desc&endblock=${latestBlock}&startblock=0&offset=1000&page=1`;
 
   const response = await axios.get(etherscanUrl);
   const data = response.data.result;
@@ -17,9 +20,9 @@ export const GET = async (req: NextRequest) => {
   for (let i = 0; i < data.length; i++) {
     const tx = data[i];
     if (
-      tx.to.toLowerCase() === tokenAddress?.toLowerCase() &&
+      tx.to.toLowerCase() === airdropContract?.toLowerCase() &&
       tx.txreceipt_status === '1' &&
-      tx.methodId === '0xa9059cbb' // methodId for transfer(address to, uint256 value)
+      tx.methodId === methodId
     ) {
       totalSample += 1;
       totalGasUsed += parseInt(tx.gasUsed, 10);
@@ -34,7 +37,7 @@ export const GET = async (req: NextRequest) => {
   averageGasUsed = Math.round(averageGasUsed * 1.1); // increase by 10%
 
   if (!averageGasUsed) {
-    averageGasUsed = 80000;
+    averageGasUsed = 100000;
   }
 
   return NextResponse.json({ data: averageGasUsed });
