@@ -9,21 +9,13 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
   // connect to MEV-Share on mainnet
   const mevShareClient = getSepoliaMevShareClient(privateKey);
 
-  let result = await mevShareClient.sendBundle({
+  const result = await mevShareClient.sendBundle({
     body: bundle,
     inclusion: {
-      block: blockNumber + 1,
-      maxBlock: blockNumber + 24,
+      block: Number(blockNumber) + 1,
+      maxBlock: Number(blockNumber) + 24,
     },
   });
-
-  result = JSON.parse(
-    JSON.stringify(result, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value,
-    ),
-  );
-
-  console.log(result);
 
   return NextResponse.json({ data: result });
 };
