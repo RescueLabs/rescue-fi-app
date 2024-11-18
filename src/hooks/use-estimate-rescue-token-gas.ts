@@ -24,7 +24,7 @@ export const useEstimateRescueTokenGas = (tokenAddress: string) => {
 
     const gas = BigInt(21000) + BigInt(response.data.data);
     return {
-      gasInWei: gas * gasPrice,
+      gasInWei: gas * gasPrice, // ethereum to send
       gas,
       gasPrice,
       txGases: [21000, response.data],
