@@ -1,3 +1,6 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import React from 'react';
 
 import {
@@ -37,13 +40,33 @@ const allFaqs = [
 
 export const AllFaqs = () => {
   return (
-    <Accordion type="single" collapsible className="w-full">
-      {allFaqs.map((faq, index) => (
-        <AccordionItem value={`item-${index + 1}`} key={index}>
-          <AccordionTrigger>{faq.question}</AccordionTrigger>
-          <AccordionContent>{faq.answer}</AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+    <>
+      <motion.h1
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.15 }}
+        className="text-center text-3xl font-bold"
+      >
+        Frequently Asked Questions
+      </motion.h1>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className="w-full"
+      >
+        <Accordion type="single" collapsible className="w-full">
+          {allFaqs.map((faq, index) => (
+            <AccordionItem value={`item-${index + 1}`} key={index}>
+              <AccordionTrigger>{faq.question}</AccordionTrigger>
+              <AccordionContent>{faq.answer}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </motion.div>
+    </>
   );
 };

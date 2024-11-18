@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useCallback } from 'react';
 
-import { getPublicClient } from '@/lib/utils';
+import { getPublicClient, validateTokenAddress } from '@/lib/utils';
 
 import { useGasPrice } from './use-gas-Price';
 
@@ -13,6 +13,9 @@ export const useEstimateRescueTokenGas = (tokenAddress: string) => {
   const { gasPrice } = useGasPrice();
 
   const estimateGas = useCallback(async () => {
+    if (!validateTokenAddress(tokenAddress))
+      return { gasInWei: BigInt(0), gas: BigInt(0), gasPrice };
+
     const latestBlock = await publicClient.getBlockNumber();
     const response = await axios.get('/api/estimate-send-token-gas', {
       params: {

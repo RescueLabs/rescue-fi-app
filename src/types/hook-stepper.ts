@@ -10,7 +10,11 @@ export type AirdropStepperFormKeysType =
   (typeof AIRDROP_STEPPER_FORM_KEYS)[keyof typeof AIRDROP_STEPPER_FORM_KEYS][number];
 
 export type StepperFormValues = {
-  [FieldName in StepperFormKeysType]: string;
+  [FieldName in StepperFormKeysType]: FieldName extends 'amountToSalvage'
+    ? string
+    : `0x${string}`;
 } & {
-  [FieldName in AirdropStepperFormKeysType]: string;
+  [FieldName in AirdropStepperFormKeysType]: FieldName extends 'amountToSalvage'
+    ? string
+    : `0x${string}`;
 };

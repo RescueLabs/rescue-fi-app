@@ -74,14 +74,23 @@ export const DesktopSidebar = ({
 
   return (
     <motion.div
-      initial={false}
+      initial={{
+        width: '80px',
+        opacity: 0,
+      }}
       className={cn(
         'relative z-[50] hidden h-full w-[250px] flex-shrink-0 rounded-xl border border-slate-800/50 bg-white px-3 py-4 dark:border-slate-200/50 dark:bg-in-black-300 md:flex md:flex-col',
         className,
       )}
       animate={{
         width: animate ? (open ? '250px' : '80px') : '250px',
+        opacity: 1,
       }}
+      exit={{
+        width: '80px',
+        opacity: 0,
+      }}
+      transition={{ duration: 0.3, delay: 0.1 }}
       {...props}
     >
       <>
@@ -128,11 +137,15 @@ export const MobileSidebar = ({
   }, [open]);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
       className={cn(
         'fixed left-0 top-0 z-50 flex h-10 w-full flex-row items-center justify-between rounded-full md:hidden',
       )}
-      {...props}
+      {...(props as React.ComponentProps<typeof motion.div>)}
     >
       <div className="z-20 mx-auto mt-8 flex h-10 w-[95%] items-center justify-between rounded-full bg-white/60 px-4 py-4 dark:bg-in-black-300/60">
         <Link href="/" className="flex items-center">
@@ -171,7 +184,7 @@ export const MobileSidebar = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

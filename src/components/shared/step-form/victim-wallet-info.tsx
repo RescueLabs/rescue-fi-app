@@ -1,17 +1,22 @@
 import { IconFidgetSpinner, IconInfoCircle } from '@tabler/icons-react';
 import { Contract, formatUnits, JsonRpcProvider } from 'ethers';
 import { motion } from 'framer-motion';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-input';
 import { RPC_URL } from '@/lib/constants';
 import ERC20_ABI from '@/lib/constants/abis/erc20.json';
-import { getWalletAddressFromPrivateKey } from '@/lib/utils';
+import {
+  getWalletAddressFromPrivateKey,
+  validateTokenAddress,
+} from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 
-export const VictimWalletInfo = () => {
+export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
+  formType,
+}) => {
   const [tokenSymbol, setTokenSymbol] = useState<string>('');
   const [tokenBalance, setTokenBalance] = useState<string>('0');
   const [tokenSymbolLoading, setTokenSymbolLoading] = useState<boolean>(false);
@@ -49,10 +54,7 @@ export const VictimWalletInfo = () => {
       try {
         setTokenSymbolLoading(true);
 
-        if (
-          (tokenAddress?.length || 0) < 42 ||
-          (tokenAddress?.length || 0) > 42
-        ) {
+        if (!validateTokenAddress(tokenAddress)) {
           setTokenSymbolLoading(false);
           return '';
         }
@@ -149,7 +151,11 @@ export const VictimWalletInfo = () => {
                 if (parseInt(value, 10) === 0) {
                   return 'Salvage amount must be greater than 0';
                 }
-                if (!!value && +value > +tokenBalance) {
+                if (
+                  !!value &&
+                  +value > +tokenBalance &&
+                  formType !== 'airdrop'
+                ) {
                   return 'Amount to salvage is greater than balance';
                 }
 
