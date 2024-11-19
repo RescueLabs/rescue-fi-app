@@ -64,7 +64,7 @@ export const WalletStepForm = () => {
     isFetchingEthRemainingBalance,
   } = useEthBalance({
     rescuerPrivateKey,
-    balanceNeeded: gas?.gasInWei ?? BigInt(0),
+    balanceNeeded: gas?.gasInWei,
   });
 
   const handleNext = useCallback(() => {
@@ -108,9 +108,21 @@ export const WalletStepForm = () => {
     [sendBundle, watchBundle, gas, tokenAddress, rescuerPrivateKey],
   );
 
+  const calculateGas = useCallback(async () => {
+    const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
+
+    return {
+      gas: _gas + BigInt(21000),
+      gasPrice,
+      gasInWei: gasInWei + BigInt(21000) * gasPrice,
+    }; // 21000 is the gas for sending the gas to victim
+  }, [estimateRescueTokenGas]);
+
   const onSubmit = async (formData: StepperFormValues) => {
     try {
       if (!ethBalanceEnough) return;
+
+      const calcGas = await calculateGas();
 
       setActiveStep(3);
 
@@ -122,22 +134,12 @@ export const WalletStepForm = () => {
         amount: BigInt(
           Number(formData.amountToSalvage) * 10 ** Number(decimals),
         ),
-        gasPrice: gas?.gasPrice ?? BigInt(0),
+        gasPrice: calcGas?.gasPrice ?? BigInt(0),
       });
     } catch (error: any) {
       console.log(error);
     }
   };
-
-  const calculateGas = useCallback(async () => {
-    const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
-
-    return {
-      gas: _gas + BigInt(21000),
-      gasPrice,
-      gasInWei: gasInWei + BigInt(21000) * gasPrice,
-    }; // 21000 is the gas for sending the gas to victim
-  }, [estimateRescueTokenGas]);
 
   // focus errored input on submit
   useEffect(() => {

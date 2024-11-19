@@ -102,28 +102,6 @@ export const useClaimAirdropBundle = () => {
         gas: txGases[1],
       });
 
-      console.log(
-        'signedTransaction1',
-        {
-          to: victimAccount.address,
-          value: (gas - BigInt(21000)) * gasPrice,
-          nonce: rescuerNonce,
-          gasPrice,
-          gas: BigInt(21000),
-          data: '0x' as `0x${string}`,
-          chainId: SEPOLIA_CHAIN_ID,
-        },
-        'signedTransaction2',
-        {
-          to: airdropContractAddress,
-          value: BigInt(0),
-          nonce: victimNonce,
-          gasPrice,
-          data,
-          gas: txGases[1],
-        },
-      );
-
       etherTx = ethers.Transaction.from(signedTransaction2);
       const txHash2 = keccak256(etherTx.serialized);
 
@@ -139,6 +117,7 @@ export const useClaimAirdropBundle = () => {
         ]) as `0x${string}`,
         gas: txGases[2],
       });
+
       etherTx = ethers.Transaction.from(signedTransaction3);
       const txHash3 = keccak256(etherTx.serialized);
 

@@ -148,7 +148,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
             },
             validate: {
               greaterThanBalance: (value) => {
-                if (parseInt(value, 10) === 0) {
+                if (+value === 0) {
                   return 'Salvage amount must be greater than 0';
                 }
                 if (

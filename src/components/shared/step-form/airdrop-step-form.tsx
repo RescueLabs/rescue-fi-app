@@ -2,6 +2,7 @@
 
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
+import { parseUnits } from 'ethers';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
@@ -77,7 +78,7 @@ export const AirdropStepForm = () => {
     isFetchingEthRemainingBalance,
   } = useEthBalance({
     rescuerPrivateKey,
-    balanceNeeded: calculatedGas?.gasInWei ?? BigInt(0),
+    balanceNeeded: calculatedGas?.gasInWei,
   });
 
   const handleNext = useCallback(() => {
@@ -112,7 +113,7 @@ export const AirdropStepForm = () => {
       gas: sendTokenGas + claimAirdropGas + BigInt(21000),
       txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
       gasPrice,
-      gasInWei: gasInWei + (BigInt(21000) + claimAirdropGas) * gasPrice,
+      gasInWei: BigInt(21000) * gasPrice + gasInWei,
     };
   }, [
     estimateRescueTokenGas,
@@ -130,6 +131,8 @@ export const AirdropStepForm = () => {
 
       setActiveStep(4);
 
+      const calcGas = await calculateGas();
+
       const { decimals } = await getTokenDetails(tokenAddress);
 
       const [_, txHashes] = await sendBundle({
@@ -139,16 +142,10 @@ export const AirdropStepForm = () => {
         tokenAddress,
         airdropContractAddress: formData.airdropContractAddress,
         data: formData.callData,
-        txGases: calculatedGas?.txGases ?? [
-          BigInt(21000),
-          BigInt(0),
-          BigInt(0),
-        ],
-        amount: BigInt(
-          Number(formData.amountToSalvage) * 10 ** Number(decimals),
-        ),
-        gasPrice: calculatedGas?.gasPrice ?? BigInt(0),
-        gas: calculatedGas?.gas ?? BigInt(0),
+        txGases: calcGas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
+        amount: BigInt(parseUnits(formData.amountToSalvage, decimals)),
+        gasPrice: calcGas?.gasPrice ?? BigInt(0),
+        gas: calcGas?.gas ?? BigInt(0),
       });
 
       if (txHashes) watchBundle(txHashes[0] as `0x${string}`, MAX_BLOCK_NUMBER);

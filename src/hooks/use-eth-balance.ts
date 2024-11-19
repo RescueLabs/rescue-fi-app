@@ -13,7 +13,7 @@ export const useEthBalance = ({
   balanceNeeded,
 }: {
   rescuerPrivateKey: string;
-  balanceNeeded: bigint;
+  balanceNeeded?: bigint;
 }) => {
   const [ethBalanceEnough, setEthBalanceEnough] = useState<boolean>(false);
 
@@ -33,17 +33,22 @@ export const useEthBalance = ({
 
       const balance = await provider?.getBalance(rescuerAddress);
 
-      return balanceNeeded - balance;
+      return (balanceNeeded ?? BigInt(0)) - balance;
     },
     refetchInterval: 5000,
     enabled: validatePrivateKey(rescuerPrivateKey) && !ethBalanceEnough,
   });
 
   useEffect(() => {
-    if (ethRemainingBalance && Number(ethRemainingBalance) <= 0) {
+    if (
+      ethRemainingBalance &&
+      Number(ethRemainingBalance) <= 0 &&
+      balanceNeeded !== undefined &&
+      balanceNeeded !== null
+    ) {
       setEthBalanceEnough(true);
     }
-  }, [ethRemainingBalance]);
+  }, [ethRemainingBalance, balanceNeeded]);
 
   return {
     ethBalanceEnough,
