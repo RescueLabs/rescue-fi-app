@@ -1,6 +1,6 @@
 export const RPC_URL = 'https://ethereum-sepolia-rpc.publicnode.com';
-export const AVG_SEPOLIA_BLOCK_TIME = 30;
-export const MAX_BLOCK_NUMBER = 25;
+export const AVG_SEPOLIA_BLOCK_TIME = 13;
+export const MAX_BLOCK_NUMBER = 24;
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 export const SEPOLIA_AIRDROP_CONTRACT_ADDRESS =
@@ -16,3 +16,5 @@ export const SEPOLIA_VICTIM_PRIVATE_KEY = process.env
   .NEXT_PUBLIC_SEPOLIA_VICTIM_PRIVATE_KEY as `0x${string}`;
 export const SEPOLIA_RESCUER_PRIVATE_KEY = process.env
   .NEXT_PUBLIC_SEPOLIA_RESCUER_PRIVATE_KEY as `0x${string}`;
+export const MEV_AUTH_SIGNER_PRIVATE_KEY = process.env
+  .MEV_AUTH_SIGNER_PRIVATE_KEY as `0x${string}`;

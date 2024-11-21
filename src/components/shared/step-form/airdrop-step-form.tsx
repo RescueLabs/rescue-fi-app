@@ -1,5 +1,6 @@
 'use client';
 
+import { BundleParams } from '@flashbots/mev-share-client';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -13,8 +14,8 @@ import { Card } from '@/components/ui/card';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEstimateClaimAirdropGas } from '@/hooks/use-estimate-claim-airdrop-gas';
 import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
+import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import {
-  MAX_BLOCK_NUMBER,
   SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
   SEPOLIA_AIRDROP_DATA,
   SEPOLIA_RECEIVER_ADDRESS,
@@ -174,6 +175,8 @@ export const AirdropStepForm = () => {
       gas: gas?.gas ?? BigInt(0),
     });
 
+  const { simulateBundle } = useSimulateBundle();
+
   useEffect(() => {
     const calculateGas = async () => {
       const {
@@ -186,7 +189,7 @@ export const AirdropStepForm = () => {
         gas: sendTokenGas + claimAirdropGas + BigInt(21000),
         txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
         gasPrice,
-        gasInWei,
+        gasInWei: gasInWei + claimAirdropGas + BigInt(21000) * gasPrice,
       });
     };
     calculateGas();
@@ -199,9 +202,11 @@ export const AirdropStepForm = () => {
   }, [loading, success, failed]);
 
   const sendBundleAndWatch = useCallback(async () => {
-    const [_, txHashes] = await sendBundle();
-    watchBundle(txHashes[0] as `0x${string}`, MAX_BLOCK_NUMBER);
-  }, [sendBundle, watchBundle]);
+    const { txHashes, bundle, maxBlockNumber } = await sendBundle();
+    console.log('maxBlockNumber', maxBlockNumber);
+    simulateBundle(bundle as BundleParams['body']);
+    watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+  }, [sendBundle, watchBundle, simulateBundle]);
 
   return (
     <AnimatePresence mode="wait">

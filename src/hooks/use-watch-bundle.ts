@@ -1,6 +1,5 @@
+import axios from 'axios';
 import { useCallback, useState } from 'react';
-
-import { AVG_SEPOLIA_BLOCK_TIME } from '@/lib/constants';
 
 import { getPublicClient } from '../lib/utils';
 
@@ -12,17 +11,33 @@ export const useWatchBundle = () => {
   const [success, setSuccess] = useState(false);
 
   const watchBundle = useCallback(
-    async (txHash: `0x${string}`, maxBlockNumber: number) => {
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: txHash,
-        timeout: maxBlockNumber * AVG_SEPOLIA_BLOCK_TIME * 1000,
-      });
-      if (receipt.status === 'success') {
-        setLoading(false);
-        setSuccess(true);
-      } else {
+    async (txHash: `0x${string}`, blockNumber: bigint) => {
+      const result = await axios.get(
+        `/api/get-block-countdown?blockNumber=${blockNumber}`,
+      );
+      const deadline = Number(result.data.data.EstimateTimeInSec) * 1000;
+      console.log(
+        'deadline',
+        new Date(new Date().getTime() + deadline).toString(),
+      );
+
+      try {
+        console.log('waiting for tx receipt', txHash);
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+          timeout: 30000,
+        });
+        console.log('tx receipt', receipt);
+        if (receipt.status === 'success') {
+          setSuccess(true);
+        } else {
+          setFailed(true);
+        }
+      } catch (error) {
         setFailed(true);
+        console.log(error);
       }
+      setLoading(false);
     },
     [],
   );

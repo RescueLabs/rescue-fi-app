@@ -5,7 +5,7 @@ import { ethers, Interface, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 
-import { SEPOLIA_CHAIN_ID } from '@/lib/constants';
+import { MAX_BLOCK_NUMBER, SEPOLIA_CHAIN_ID } from '@/lib/constants';
 
 import { getPublicClient } from '../lib/utils';
 
@@ -75,11 +75,27 @@ export const useClaimAirdropBundle = ({
       data: '0x' as `0x${string}`,
       chainId: SEPOLIA_CHAIN_ID,
     });
+    console.log('tx1', {
+      to: victimAccount.address,
+      value: (gas - BigInt(21000)) * gasPrice,
+      nonce: rescuerNonce,
+      gasPrice,
+      gas: BigInt(21000),
+      data: '0x' as `0x${string}`,
+    });
     let etherTx = ethers.Transaction.from(signedTransaction1);
     const txHash1 = keccak256(etherTx.serialized);
 
     // transaction to claim airdrop
     const signedTransaction2 = await victimAccount.signTransaction({
+      to: airdropContractAddress,
+      value: BigInt(0),
+      nonce: victimNonce,
+      gasPrice,
+      data,
+      gas: txGases[1],
+    });
+    console.log('tx2', {
       to: airdropContractAddress,
       value: BigInt(0),
       nonce: victimNonce,
@@ -102,6 +118,17 @@ export const useClaimAirdropBundle = ({
       ]) as `0x${string}`,
       gas: txGases[2],
     });
+    console.log('tx3', {
+      to: tokenAddress,
+      value: BigInt(0),
+      nonce: victimNonce + 1,
+      gasPrice,
+      data: erc20Interface.encodeFunctionData('transfer', [
+        receiverAddress,
+        amount,
+      ]) as `0x${string}`,
+      gas: txGases[2],
+    });
     etherTx = ethers.Transaction.from(signedTransaction3);
     const txHash3 = keccak256(etherTx.serialized);
 
@@ -110,17 +137,21 @@ export const useClaimAirdropBundle = ({
       { tx: signedTransaction2 ?? '', canRevert: false },
       { tx: signedTransaction3 ?? '', canRevert: false },
     ];
-
+    const blockNumber = await publicClient.getBlockNumber();
     const bundleResult: ISendBundleResult = await axios.post(
       '/api/send-bundle',
       {
         bundle,
-        blockNumber: String(await publicClient.getBlockNumber()),
-        privateKey: rescuerPrivateKey,
+        blockNumber: String(blockNumber),
       },
     );
 
-    return [bundleResult.bundleHash, [txHash1, txHash2, txHash3]];
+    return {
+      bundleHash: bundleResult.bundleHash,
+      txHashes: [txHash1, txHash2, txHash3],
+      bundle,
+      maxBlockNumber: blockNumber + BigInt(MAX_BLOCK_NUMBER),
+    };
   }, [
     victimAccount,
     rescuerAccount,

@@ -5,7 +5,7 @@ import { ethers, Interface, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 
-import { SEPOLIA_CHAIN_ID } from '@/lib/constants';
+import { MAX_BLOCK_NUMBER, SEPOLIA_CHAIN_ID } from '@/lib/constants';
 
 import { getPublicClient } from '../lib/utils';
 
@@ -92,16 +92,19 @@ export const useRescueTokenBundle = ({
       { tx: signedTransaction2 ?? '', canRevert: false },
     ];
 
-    const bundleResult: ISendBundleResult = await axios.post(
-      '/api/send-bundle',
-      {
-        bundle,
-        blockNumber: String(await publicClient.getBlockNumber()),
-        privateKey: rescuerPrivateKey,
-      },
-    );
+    const blockNumber = await publicClient.getBlockNumber();
+    let bundleResult: ISendBundleResult;
+    b = await axios.post('/api/send-bundle', {
+      bundle,
+      blockNumber: String(blockNumber),
+    });
 
-    return [bundleResult.bundleHash, [txHash1, txHash2]];
+    return {
+      bundleHash: bundleResult.bundleHash,
+      txHashes: [txHash1, txHash2],
+      bundle,
+      maxBlockNumber: blockNumber + BigInt(MAX_BLOCK_NUMBER),
+    };
   }, [
     victimAccount,
     rescuerAccount,

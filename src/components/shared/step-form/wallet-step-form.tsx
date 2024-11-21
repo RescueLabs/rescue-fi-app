@@ -1,5 +1,6 @@
 'use client';
 
+import { BundleParams } from '@flashbots/mev-share-client';
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -12,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
 import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
+import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import {
-  MAX_BLOCK_NUMBER,
   SEPOLIA_RECEIVER_ADDRESS,
   SEPOLIA_RESCUER_PRIVATE_KEY,
   SEPOLIA_TOKEN_ADDRESS,
@@ -138,6 +139,7 @@ export const WalletStepForm = () => {
   const handleBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
+  const { simulateBundle } = useSimulateBundle();
 
   const estimateRescueTokenGas = useEstimateRescueTokenGas(
     SEPOLIA_TOKEN_ADDRESS,
@@ -174,9 +176,10 @@ export const WalletStepForm = () => {
   }, [loading, success, failed]);
 
   const sendBundleAndWatch = useCallback(async () => {
-    const [_, txHashes] = await sendBundle();
-    watchBundle(txHashes[0] as `0x${string}`, MAX_BLOCK_NUMBER);
-  }, [sendBundle, watchBundle]);
+    const { txHashes, maxBlockNumber, bundle } = await sendBundle();
+    simulateBundle(bundle as BundleParams['body']);
+    watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+  }, [sendBundle, watchBundle, simulateBundle]);
 
   return (
     <AnimatePresence mode="wait">
