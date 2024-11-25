@@ -11,3 +11,14 @@ export const getSepoliaMevShareClient = (privateKey: string) => {
     apiUrl: 'https://relay-sepolia.flashbots.net',
   });
 };
+
+export const getEthereumMevShareClient = (privateKey: string) => {
+  const rpcUrl = 'https://ethereum-mainnet-rpc.publicnode.com';
+  const provider = new JsonRpcProvider(rpcUrl);
+  const authSigner = new Wallet(privateKey, provider);
+
+  return new MevShareClient(authSigner, {
+    streamUrl: 'https://mev-share.flashbots.net',
+    apiUrl: 'https://relay.flashbots.net',
+  });
+};
