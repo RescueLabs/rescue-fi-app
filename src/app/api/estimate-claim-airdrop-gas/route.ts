@@ -11,7 +11,13 @@ export const GET = async (req: NextRequest) => {
   const methodId = req.nextUrl.searchParams.get('methodId');
   const etherscanUrl = `https://api-sepolia.etherscan.io/api?apikey=${API_KEY}&module=account&action=txlist&address=${airdropContract}&sort=desc&endblock=${latestBlock}&startblock=0&offset=1000&page=1`;
 
-  const response = await axios.get(etherscanUrl);
+  let response;
+  try {
+    response = await axios.get(etherscanUrl);
+  } catch (error) {
+    console.log('EstimateClaimAirdropGasError', error);
+    return NextResponse.json({ error }, { status: 500 });
+  }
   const data = response.data.result;
 
   let totalSample = 0;

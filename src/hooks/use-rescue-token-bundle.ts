@@ -94,10 +94,20 @@ export const useRescueTokenBundle = ({
 
     const blockNumber = await publicClient.getBlockNumber();
     let bundleResult: ISendBundleResult;
-    b = await axios.post('/api/send-bundle', {
-      bundle,
-      blockNumber: String(blockNumber),
-    });
+
+    try {
+      bundleResult = (
+        await axios.post('/api/send-bundle', {
+          bundle,
+          blockNumber: String(blockNumber),
+        })
+      ).data.data;
+    } catch (error) {
+      console.log('RescueTokenBundleError', error);
+      setFailed(true);
+      setLoading(false);
+      bundleResult = { bundleHash: '' };
+    }
 
     return {
       bundleHash: bundleResult.bundleHash,

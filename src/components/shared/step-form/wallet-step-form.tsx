@@ -176,9 +176,11 @@ export const WalletStepForm = () => {
   }, [loading, success, failed]);
 
   const sendBundleAndWatch = useCallback(async () => {
-    const { txHashes, maxBlockNumber, bundle } = await sendBundle();
-    simulateBundle(bundle as BundleParams['body']);
-    watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    const { txHashes, maxBlockNumber, bundle, bundleHash } = await sendBundle();
+    if (bundleHash) {
+      simulateBundle(bundle as BundleParams['body']);
+      watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    }
   }, [sendBundle, watchBundle, simulateBundle]);
 
   return (

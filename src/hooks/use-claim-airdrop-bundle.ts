@@ -138,13 +138,20 @@ export const useClaimAirdropBundle = ({
       { tx: signedTransaction3 ?? '', canRevert: false },
     ];
     const blockNumber = await publicClient.getBlockNumber();
-    const bundleResult: ISendBundleResult = await axios.post(
-      '/api/send-bundle',
-      {
-        bundle,
-        blockNumber: String(blockNumber),
-      },
-    );
+    let bundleResult: ISendBundleResult;
+    try {
+      bundleResult = (
+        await axios.post('/api/send-bundle', {
+          bundle,
+          blockNumber: String(blockNumber),
+        })
+      ).data.data;
+    } catch (error) {
+      console.log('ClaimAirdropBundleError', error);
+      setFailed(true);
+      setLoading(false);
+      bundleResult = { bundleHash: '' };
+    }
 
     return {
       bundleHash: bundleResult.bundleHash,

@@ -12,20 +12,26 @@ export const useWatchBundle = () => {
 
   const watchBundle = useCallback(
     async (txHash: `0x${string}`, blockNumber: bigint) => {
-      const result = await axios.get(
-        `/api/get-block-countdown?blockNumber=${blockNumber}`,
-      );
-      const deadline = Number(result.data.data.EstimateTimeInSec) * 1000;
+      let result;
+      try {
+        result = await axios.get(
+          `/api/get-block-countdown?blockNumber=${blockNumber}`,
+        );
+      } catch (error) {
+        console.log('WatchBundleError', error);
+        result = { data: { data: { EstimateTimeInSec: '360' } } };
+      }
+      const timeout = Number(result.data.data.EstimateTimeInSec) * 1000 + 15000;
       console.log(
         'deadline',
-        new Date(new Date().getTime() + deadline).toString(),
+        new Date(new Date().getTime() + timeout).toString(),
       );
 
       try {
         console.log('waiting for tx receipt', txHash);
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,
-          timeout: 30000,
+          timeout,
         });
         console.log('tx receipt', receipt);
         if (receipt.status === 'success') {
@@ -35,7 +41,7 @@ export const useWatchBundle = () => {
         }
       } catch (error) {
         setFailed(true);
-        console.log(error);
+        console.log('WatchBundleError', error);
       }
       setLoading(false);
     },

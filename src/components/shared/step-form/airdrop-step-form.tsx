@@ -202,10 +202,12 @@ export const AirdropStepForm = () => {
   }, [loading, success, failed]);
 
   const sendBundleAndWatch = useCallback(async () => {
-    const { txHashes, bundle, maxBlockNumber } = await sendBundle();
-    console.log('maxBlockNumber', maxBlockNumber);
-    simulateBundle(bundle as BundleParams['body']);
-    watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    const { txHashes, bundle, maxBlockNumber, bundleHash } = await sendBundle();
+    console.log('maxBlockNumber', maxBlockNumber, bundleHash);
+    if (bundleHash) {
+      simulateBundle(bundle as BundleParams['body']);
+      watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    }
   }, [sendBundle, watchBundle, simulateBundle]);
 
   return (

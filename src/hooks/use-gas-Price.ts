@@ -16,10 +16,24 @@ export const useGasPrice = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['gas-fee-data'],
     queryFn: async (): Promise<GasFeeData> => {
-      const response = await axios.get(
-        `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken`,
-      );
-      return response.data;
+      try {
+        const response = await axios.get(
+          `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken`,
+        );
+        return response.data;
+      } catch (error) {
+        console.log('GasPriceError', error);
+        return {
+          result: {
+            FastGasPrice: '0',
+            LastBlock: '0',
+            SafeGasPrice: '0',
+            ProposeGasPrice: '0',
+            suggestBaseFee: '0',
+            gasUsedRatio: '0',
+          },
+        };
+      }
     },
   });
 

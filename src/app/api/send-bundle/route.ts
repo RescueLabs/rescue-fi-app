@@ -10,13 +10,20 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
   // connect to MEV-Share on mainnet
   const mevShareClient = getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY);
 
-  const result = await mevShareClient.sendBundle({
-    body: bundle,
-    inclusion: {
-      block: Number(blockNumber) + 1,
-      maxBlock: Number(blockNumber) + 24,
-    },
-  });
+  let result;
+  try {
+    result = await mevShareClient.sendBundle({
+      body: bundle,
+      inclusion: {
+        block: Number(blockNumber) + 1,
+        maxBlock: Number(blockNumber) + 24,
+      },
+    });
+  } catch (error) {
+    console.log('SendBundleError', error);
+    result = { bundleHash: '' };
+    return NextResponse.json({ error }, { status: 500 });
+  }
 
   return NextResponse.json({ data: result });
 };
