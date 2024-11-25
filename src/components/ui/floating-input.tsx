@@ -60,7 +60,9 @@ const FloatingLabelInput = React.forwardRef<
           {...props}
           className={cn(props?.className || '', error && '!border-red-500')}
         />
-        <FloatingLabel htmlFor={id}>{label}</FloatingLabel>
+        <FloatingLabel htmlFor={id}>
+          {label} <span className="text-red-500">*</span>
+        </FloatingLabel>
         {extraElement}
       </div>
       {infoText}

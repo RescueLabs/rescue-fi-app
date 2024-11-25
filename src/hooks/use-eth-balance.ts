@@ -33,21 +33,29 @@ export const useEthBalance = ({
 
       const balance = await provider?.getBalance(rescuerAddress);
 
-      return (balanceNeeded ?? BigInt(0)) - balance;
+      return (balanceNeeded ?? BigInt(Number.MAX_SAFE_INTEGER)) - balance;
     },
     refetchInterval: 5000,
     enabled: validatePrivateKey(rescuerPrivateKey) && !ethBalanceEnough,
   });
 
   useEffect(() => {
+    if (!validatePrivateKey(rescuerPrivateKey)) {
+      setEthBalanceEnough(false);
+    }
+  }, [rescuerPrivateKey]);
+
+  useEffect(() => {
     if (
       ethRemainingBalance &&
       Number(ethRemainingBalance) <= 0 &&
       balanceNeeded !== undefined &&
-      balanceNeeded !== null
+      balanceNeeded !== null &&
+      validatePrivateKey(rescuerPrivateKey)
     ) {
       setEthBalanceEnough(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethRemainingBalance, balanceNeeded]);
 
   return {

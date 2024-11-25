@@ -202,9 +202,13 @@ export const WalletStepForm = () => {
               <span className="">
                 {ethBalanceEnough
                   ? 'All set!'
-                  : `Please send ${roundToFiveDecimals(
-                      Number(ethRemainingBalance) / 10 ** 18,
-                    )} ETH to Rescuer wallet to cover the transaction fees.`}
+                  : `Please send ${
+                      !isNaN(Number(ethRemainingBalance))
+                        ? roundToFiveDecimals(
+                            Number(ethRemainingBalance) / 10 ** 18,
+                          )
+                        : 'x'
+                    } ETH to Rescuer wallet to cover the transaction fees.`}
               </span>
             </p>
 
