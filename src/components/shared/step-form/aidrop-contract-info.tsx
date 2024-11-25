@@ -38,12 +38,12 @@ export const AirdropContractInfo = () => {
           // TODO: cross-check regex for this
           {...register('callData', {
             required: 'Required',
-            maxLength: {
-              value: 66,
+            minLength: {
+              value: 10,
               message: 'Invalid call data format',
             },
             pattern: {
-              value: /^(0x)?[0-9a-fA-F]{64}$/,
+              value: /^(0x)?[0-9a-fA-F]{10,}$/,
               message: 'Invalid call data format',
             },
           })}

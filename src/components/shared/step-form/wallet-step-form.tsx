@@ -1,32 +1,24 @@
 'use client';
 
 import { BundleParams } from '@flashbots/mev-share-client';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
+import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
-import {
-  SEPOLIA_RECEIVER_ADDRESS,
-  SEPOLIA_RESCUER_PRIVATE_KEY,
-  SEPOLIA_TOKEN_ADDRESS,
-  SEPOLIA_VICTIM_PRIVATE_KEY,
-} from '@/lib/constants';
-import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
-import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
+import { useTokenDetails } from '@/hooks/use-token-details';
+import { roundToFiveDecimals, validateTokenAddress } from '@/lib/utils';
+import { StepperFormValues } from '@/types/hook-stepper';
 
-import {
-  FormRescueFundsLoading,
-  FormRescueFundsLoadingStatus,
-} from './form-rescue-funds-loading';
+import { FormRescueFundsLoading } from './form-rescue-funds-loading';
 import { RescueWalletInfo } from './rescue-wallet-info';
 import { VictimWalletInfo } from './victim-wallet-info';
 
@@ -44,17 +36,118 @@ const getStepContent = (step: number) => {
 export const WalletStepForm = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
   const [erroredInputName, setErroredInputName] = useState<string>('');
-  const [formRescueFundsLoadingStatus, setFormRescueFundsLoadingStatus] =
-    useState<FormRescueFundsLoadingStatus>('loading');
+  const [gas, setGas] = useState<{
+    gas: bigint;
+    gasPrice: bigint;
+    gasInWei: bigint;
+  }>();
+
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
 
+  const [tokenAddress, rescuerPrivateKey] = useWatch({
+    control: methods.control,
+    name: ['tokenAddress', 'rescuerPrivateKey'],
+  });
+
   const {
     handleSubmit,
-    setError,
     formState: { isSubmitting, isValid },
   } = methods;
+
+  const estimateRescueTokenGas = useEstimateRescueTokenGas(tokenAddress);
+  const { getTokenDetails } = useTokenDetails();
+
+  const {
+    ethBalanceEnough,
+    ethRemainingBalance,
+    isFetchingEthRemainingBalance,
+  } = useEthBalance({
+    rescuerPrivateKey,
+    balanceNeeded: gas?.gasInWei,
+  });
+
+  const handleNext = useCallback(() => {
+    if (
+      (isValid && activeStep !== 2) ||
+      (isValid && activeStep === 2 && ethBalanceEnough)
+    )
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  }, [isValid, activeStep, ethBalanceEnough]);
+
+  const handleBack = useCallback(() => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  }, []);
+
+  const { sendBundle, loading, success, failed, watchBundle } =
+    useRescueTokenBundle();
+  const { simulateBundle } = useSimulateBundle();
+
+  const sendBundleAndWatch = useCallback(
+    async ({
+      victimPrivateKey,
+      receiverAddress,
+      amount,
+      gasPrice,
+    }: {
+      victimPrivateKey: `0x${string}`;
+      receiverAddress: `0x${string}`;
+      amount: bigint;
+      gasPrice: bigint;
+    }) => {
+      const { txHashes, bundle, bundleHash, maxBlockNumber } = await sendBundle(
+        {
+          victimPrivateKey,
+          rescuerPrivateKey,
+          receiverAddress,
+          tokenAddress,
+          amount,
+          gasPrice,
+          gas: gas?.gas ?? BigInt(0),
+        },
+      );
+
+      if (bundleHash) {
+        simulateBundle(bundle as BundleParams['body']);
+        watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+      }
+    },
+    [sendBundle, watchBundle, gas, tokenAddress, rescuerPrivateKey],
+  );
+
+  const calculateGas = useCallback(async () => {
+    const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
+
+    return {
+      gas: _gas + BigInt(21000),
+      gasPrice,
+      gasInWei: gasInWei + BigInt(21000) * gasPrice,
+    }; // 21000 is the gas for sending the gas to victim
+  }, [estimateRescueTokenGas]);
+
+  const onSubmit = async (formData: StepperFormValues) => {
+    try {
+      if (!ethBalanceEnough) return;
+
+      const calcGas = await calculateGas();
+
+      setActiveStep(3);
+
+      const { decimals } = await getTokenDetails(tokenAddress);
+
+      sendBundleAndWatch({
+        victimPrivateKey: formData.victimPrivateKey,
+        receiverAddress: formData.receiverWalletAddress,
+        amount: BigInt(
+          Number(formData.amountToSalvage) * 10 ** Number(decimals),
+        ),
+        gasPrice: calcGas?.gasPrice ?? BigInt(0),
+      });
+    } catch (error: any) {
+      console.log(error);
+    }
+  };
 
   // focus errored input on submit
   useEffect(() => {
@@ -66,122 +159,28 @@ export const WalletStepForm = () => {
     }
   }, [erroredInputName]);
 
-  const onSubmit = async (formData: StepperFormValues) => {
-    try {
-      setActiveStep(3);
-
-      // simulate api call
-      const response: { title: string; description: string } =
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // resolve({
-            //   title: "Success",
-            //   description: "Form submitted successfully",
-            // });
-            reject(
-              new Error('There was an error submitting form', {
-                cause: {
-                  errorKey: 'fullName',
-                },
-              }),
-            );
-          }, 2000);
-        });
-
-      toast.success(
-        <p>
-          Title: {response.title}
-          <br />
-          Description: {response.description}
-        </p>,
-      );
-
-      setFormRescueFundsLoadingStatus('success');
-    } catch (error: any) {
-      const errorMessage = error.message;
-      const errorKey = error.cause?.errorKey;
-
-      toast.error(errorMessage);
-      setFormRescueFundsLoadingStatus('error');
-
-      if (
-        errorKey &&
-        Object.values(WALLET_STEPPER_FORM_KEYS)
-          .flatMap((fieldNames) => fieldNames)
-          .includes(errorKey)
-      ) {
-        let erroredStep: number;
-        // get the step number based on input name
-        Object.entries(WALLET_STEPPER_FORM_KEYS).forEach(([key, value]) => {
-          if (value.includes(errorKey as never)) {
-            erroredStep = Number(key);
-          }
-        });
-        // set active step and error
-        // @ts-ignore
-        setActiveStep(erroredStep);
-        setError(errorKey as StepperFormKeysType, {
-          message: errorMessage,
-        });
-        setErroredInputName(errorKey);
-      } else {
-        setError('root.formError', {
-          message: errorMessage,
-        });
-      }
-    }
-  };
-
-  const handleNext = async () => {
-    if (isValid) setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-  const { simulateBundle } = useSimulateBundle();
-
-  const estimateRescueTokenGas = useEstimateRescueTokenGas(
-    SEPOLIA_TOKEN_ADDRESS,
-  );
-  const [gas, setGas] = useState<{
-    gas: bigint;
-    gasPrice: bigint;
-    gasInWei: bigint;
-  }>();
-
-  const { sendBundle, watchBundle } = useRescueTokenBundle({
-    victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
-    rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
-    receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
-    tokenAddress: SEPOLIA_TOKEN_ADDRESS,
-    amount: BigInt('1000000000000000000'),
-    gasPrice: gas?.gasPrice ?? BigInt(0),
-    gas: gas?.gas ?? BigInt(0),
-  });
-
   useEffect(() => {
-    const calculateGas = async () => {
-      const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
-      setGas({ gas: _gas + BigInt(21000), gasPrice, gasInWei }); // 21000 is the gas for sending the gas to victim
-    };
-    calculateGas();
-  }, [estimateRescueTokenGas]);
-
-  const sendBundleAndWatch = useCallback(async () => {
-    const { txHashes, maxBlockNumber, bundle, bundleHash } = await sendBundle();
-    if (bundleHash) {
-      simulateBundle(bundle as BundleParams['body']);
-      watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    if (
+      activeStep === 2 &&
+      calculateGas &&
+      validateTokenAddress(tokenAddress)
+    ) {
+      calculateGas().then(setGas);
     }
-  }, [sendBundle, watchBundle, simulateBundle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
 
   return (
     <AnimatePresence mode="wait">
       <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-        <p className="text-2xl font-semibold" onClick={sendBundleAndWatch}>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="text-2xl font-semibold"
+        >
           Rescue Wallet Funds
-        </p>
+        </motion.p>
 
         <motion.div
           key={activeStep}
@@ -195,16 +194,27 @@ export const WalletStepForm = () => {
         {activeStep === 2 && (
           <div className="flex flex-col items-center gap-4 text-center">
             <p className="flex gap-2 text-3xl">
-              <InfoCircledIcon className="mt-0.5 h-8 w-8" />
+              {ethBalanceEnough ? (
+                <CheckCircledIcon className="mt-0.5 h-8 w-8 text-green-500" />
+              ) : (
+                <InfoCircledIcon className="mt-0.5 h-8 w-8" />
+              )}
               <span className="">
-                Please send x ETH to Rescuer wallet to cover the transaction
-                fees.
+                {ethBalanceEnough
+                  ? 'All set!'
+                  : `Please send ${roundToFiveDecimals(
+                      Number(ethRemainingBalance) / 10 ** 18,
+                    )} ETH to Rescuer wallet to cover the transaction fees.`}
               </span>
             </p>
 
             <p className="flex items-center gap-2 text-lg font-medium">
-              <IconLoader2 className="h-5 w-5 animate-spin" />
-              Status: Not Receieved
+              <span className="flex size-5 min-w-5 items-center justify-center">
+                {isFetchingEthRemainingBalance && (
+                  <IconLoader2 className="h-5 w-5 animate-spin" />
+                )}
+              </span>
+              Status: {ethBalanceEnough ? 'ETH sufficient' : 'ETH not received'}
             </p>
           </div>
         )}
@@ -224,7 +234,15 @@ export const WalletStepForm = () => {
             >
               {activeStep === 3 ? (
                 <FormRescueFundsLoading
-                  formRescueFundsLoadingStatus={formRescueFundsLoadingStatus}
+                  formRescueFundsLoadingStatus={
+                    success
+                      ? 'success'
+                      : failed
+                        ? 'error'
+                        : loading
+                          ? 'loading'
+                          : 'loading'
+                  }
                 />
               ) : (
                 getStepContent(activeStep)

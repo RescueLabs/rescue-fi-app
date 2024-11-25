@@ -1,12 +1,12 @@
 'use client';
 
 import { BundleParams } from '@flashbots/mev-share-client';
-import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
+import { parseUnits } from 'ethers';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
@@ -14,24 +14,14 @@ import { Card } from '@/components/ui/card';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEstimateClaimAirdropGas } from '@/hooks/use-estimate-claim-airdrop-gas';
 import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
+import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
-import {
-  SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
-  SEPOLIA_AIRDROP_DATA,
-  SEPOLIA_RECEIVER_ADDRESS,
-  SEPOLIA_RESCUE_TOKEN_AMOUNT,
-  SEPOLIA_TOKEN_ADDRESS,
-  SEPOLIA_RESCUER_PRIVATE_KEY,
-  SEPOLIA_VICTIM_PRIVATE_KEY,
-} from '@/lib/constants';
-import { WALLET_STEPPER_FORM_KEYS } from '@/lib/constants/hook-stepper-constants';
-import { StepperFormKeysType, StepperFormValues } from '@/types/hook-stepper';
+import { useTokenDetails } from '@/hooks/use-token-details';
+import { roundToFiveDecimals, validateTokenAddress } from '@/lib/utils';
+import { StepperFormValues } from '@/types/hook-stepper';
 
 import { AirdropContractInfo } from './aidrop-contract-info';
-import {
-  FormRescueFundsLoading,
-  FormRescueFundsLoadingStatus,
-} from './form-rescue-funds-loading';
+import { FormRescueFundsLoading } from './form-rescue-funds-loading';
 import { RescueWalletInfo } from './rescue-wallet-info';
 import { VictimWalletInfo } from './victim-wallet-info';
 
@@ -40,7 +30,7 @@ const getStepContent = (step: number) => {
     case 1:
       return <AirdropContractInfo />;
     case 2:
-      return <VictimWalletInfo />;
+      return <VictimWalletInfo formType="airdrop" />;
     case 3:
       return <RescueWalletInfo />;
     default:
@@ -51,17 +41,126 @@ const getStepContent = (step: number) => {
 export const AirdropStepForm = () => {
   const [activeStep, setActiveStep] = useState(1);
   const [erroredInputName, setErroredInputName] = useState('');
-  const [formRescueFundsLoadingStatus, setFormRescueFundsLoadingStatus] =
-    useState<FormRescueFundsLoadingStatus>('loading');
+  const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
 
+  const [tokenAddress, airdropContractAddress, callData, rescuerPrivateKey] =
+    useWatch({
+      control: methods.control,
+      name: [
+        'tokenAddress',
+        'airdropContractAddress',
+        'callData',
+        'rescuerPrivateKey',
+      ],
+    });
+
+  const [calculatedGas, setCalculatedGas] = useState<{
+    gas: bigint;
+    txGases: bigint[];
+    gasPrice: bigint;
+    gasInWei: bigint;
+  }>();
+
   const {
     handleSubmit,
-    setError,
     formState: { isSubmitting, isValid },
   } = methods;
+
+  const estimateRescueTokenGas = useEstimateRescueTokenGas(tokenAddress);
+  const estimateClaimAirdropGas = useEstimateClaimAirdropGas();
+  const { getTokenDetails } = useTokenDetails();
+
+  const {
+    ethBalanceEnough,
+    ethRemainingBalance,
+    isFetchingEthRemainingBalance,
+  } = useEthBalance({
+    rescuerPrivateKey,
+    balanceNeeded: calculatedGas?.gasInWei,
+  });
+
+  const handleNext = useCallback(() => {
+    if (
+      (isValid && activeStep !== 3) ||
+      (isValid && activeStep === 3 && ethBalanceEnough)
+    )
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  }, [isValid, activeStep, ethBalanceEnough]);
+
+  const handleBack = useCallback(() => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  }, []);
+
+  const calculateGas = useCallback(async (): Promise<{
+    gas: bigint;
+    txGases: bigint[];
+    gasPrice: bigint;
+    gasInWei: bigint;
+  }> => {
+    const {
+      gas: sendTokenGas,
+      gasPrice,
+      gasInWei,
+    } = await estimateRescueTokenGas();
+    const { gas: claimAirdropGas } = await estimateClaimAirdropGas({
+      airdropContractAddress,
+      methodId: callData.slice(0, 10),
+    });
+
+    return {
+      gas: sendTokenGas + claimAirdropGas + BigInt(21000),
+      txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
+      gasPrice,
+      gasInWei: BigInt(21000) * gasPrice + gasInWei,
+    };
+  }, [
+    estimateRescueTokenGas,
+    estimateClaimAirdropGas,
+    airdropContractAddress,
+    callData,
+  ]);
+
+  const { sendBundle, watchBundle, success, failed, loading } =
+    useClaimAirdropBundle();
+  const { simulateBundle } = useSimulateBundle();
+
+  const onSubmit = async (formData: StepperFormValues) => {
+    try {
+      if (!ethBalanceEnough) return;
+
+      setActiveStep(4);
+
+      const calcGas = await calculateGas();
+
+      const { decimals } = await getTokenDetails(tokenAddress);
+
+      const { bundleHash, txHashes, bundle, maxBlockNumber } = await sendBundle(
+        {
+          victimPrivateKey: formData.victimPrivateKey,
+          rescuerPrivateKey,
+          receiverAddress: formData.receiverWalletAddress,
+          tokenAddress,
+          airdropContractAddress: formData.airdropContractAddress,
+          data: formData.callData,
+          txGases: calcGas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
+          amount: BigInt(parseUnits(formData.amountToSalvage, decimals)),
+          gasPrice: calcGas?.gasPrice ?? BigInt(0),
+          gas: calcGas?.gas ?? BigInt(0),
+        },
+      );
+
+      if (bundleHash) {
+        simulateBundle(bundle as BundleParams['body']);
+        watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+      }
+    } catch (error: any) {
+      setErrorSubmitting(true);
+      console.log(error);
+    }
+  };
 
   // focus errored input on submit
   useEffect(() => {
@@ -73,141 +172,30 @@ export const AirdropStepForm = () => {
     }
   }, [erroredInputName]);
 
-  const onSubmit = async (formData: StepperFormValues) => {
-    try {
-      setActiveStep(4);
-
-      // simulate api call
-      const response: { title: string; description: string } =
-        await new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // resolve({
-            //   title: "Success",
-            //   description: "Form submitted successfully",
-            // });
-            reject(
-              new Error('There was an error submitting form', {
-                cause: {
-                  errorKey: 'fullName',
-                },
-              }),
-            );
-          }, 2000);
-        });
-
-      toast.success(
-        <p>
-          Title: {response.title}
-          <br />
-          Description: {response.description}
-        </p>,
-      );
-
-      setFormRescueFundsLoadingStatus('success');
-    } catch (error: any) {
-      const errorMessage = error.message;
-      const errorKey = error.cause?.errorKey;
-
-      toast.error(errorMessage);
-      setFormRescueFundsLoadingStatus('error');
-
-      if (
-        errorKey &&
-        Object.values(WALLET_STEPPER_FORM_KEYS)
-          .flatMap((fieldNames) => fieldNames)
-          .includes(errorKey)
-      ) {
-        let erroredStep: number;
-        // get the step number based on input name
-        Object.entries(WALLET_STEPPER_FORM_KEYS).forEach(([key, value]) => {
-          if (value.includes(errorKey as never)) {
-            erroredStep = Number(key);
-          }
-        });
-        // set active step and error
-        // @ts-ignore
-        setActiveStep(erroredStep);
-        setError(errorKey as StepperFormKeysType, {
-          message: errorMessage,
-        });
-        setErroredInputName(errorKey);
-      } else {
-        setError('root.formError', {
-          message: errorMessage,
-        });
-      }
-    }
-  };
-
-  const handleNext = async () => {
-    if (isValid) setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const estimateRescueTokenGas = useEstimateRescueTokenGas(
-    SEPOLIA_TOKEN_ADDRESS,
-  );
-  const estimateClaimAirdropGas = useEstimateClaimAirdropGas(
-    SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
-    SEPOLIA_AIRDROP_DATA.slice(0, 10),
-  );
-  const [gas, setGas] = useState<{
-    gas: bigint;
-    txGases: bigint[];
-    gasPrice: bigint;
-    gasInWei: bigint;
-  }>();
-
-  const { sendBundle, watchBundle } = useClaimAirdropBundle({
-    victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
-    rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
-    receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
-    tokenAddress: SEPOLIA_TOKEN_ADDRESS,
-    airdropContractAddress: SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
-    data: SEPOLIA_AIRDROP_DATA,
-    txGases: gas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
-    amount: SEPOLIA_RESCUE_TOKEN_AMOUNT,
-    gasPrice: gas?.gasPrice ?? BigInt(0),
-    gas: gas?.gas ?? BigInt(0),
-  });
-
-  const { simulateBundle } = useSimulateBundle();
-
   useEffect(() => {
-    const calculateGas = async () => {
-      const {
-        gas: sendTokenGas,
-        gasPrice,
-        gasInWei,
-      } = await estimateRescueTokenGas();
-      const { gas: claimAirdropGas } = await estimateClaimAirdropGas();
-      setGas({
-        gas: sendTokenGas + claimAirdropGas + BigInt(21000),
-        txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
-        gasPrice,
-        gasInWei: gasInWei + claimAirdropGas + BigInt(21000) * gasPrice,
-      });
-    };
-    calculateGas();
-  }, [estimateClaimAirdropGas, estimateRescueTokenGas]);
-
-  const sendBundleAndWatch = useCallback(async () => {
-    const { txHashes, bundle, maxBlockNumber, bundleHash } = await sendBundle();
-    if (bundleHash) {
-      simulateBundle(bundle as BundleParams['body']);
-      watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
+    if (
+      activeStep === 3 &&
+      calculateGas &&
+      validateTokenAddress(tokenAddress) &&
+      validateTokenAddress(airdropContractAddress) &&
+      callData
+    ) {
+      calculateGas().then(setCalculatedGas);
     }
-  }, [sendBundle, watchBundle, simulateBundle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
 
   return (
     <AnimatePresence mode="wait">
       <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-        <p onClick={sendBundleAndWatch} className="text-2xl font-semibold">
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="text-2xl font-semibold"
+        >
           Rescue Airdrop Funds
-        </p>
+        </motion.p>
 
         <motion.div
           key={activeStep}
@@ -221,16 +209,26 @@ export const AirdropStepForm = () => {
         {activeStep === 3 && (
           <div className="flex flex-col items-center gap-4 text-center">
             <p className="flex gap-2 text-3xl">
-              <InfoCircledIcon className="mt-0.5 h-8 w-8" />
+              {ethBalanceEnough ? (
+                <CheckCircledIcon className="mt-0.5 h-8 w-8 text-green-500" />
+              ) : (
+                <InfoCircledIcon className="mt-0.5 h-8 w-8" />
+              )}
               <span className="">
-                Please send x ETH to Rescuer wallet to cover the transaction
-                fees.
+                {ethBalanceEnough
+                  ? 'All set!'
+                  : `Please send ${roundToFiveDecimals(
+                      Number(ethRemainingBalance) / 10 ** 18,
+                    )} ETH to Rescuer wallet to cover the transaction fees.`}
               </span>
             </p>
-
             <p className="flex items-center gap-2 text-lg font-medium">
-              <IconLoader2 className="h-5 w-5 animate-spin" />
-              Status: Not Receieved
+              <span className="flex size-5 min-w-5 items-center justify-center">
+                {isFetchingEthRemainingBalance && (
+                  <IconLoader2 className="h-5 w-5 animate-spin" />
+                )}
+              </span>
+              Status: {ethBalanceEnough ? 'ETH sufficient' : 'ETH not received'}
             </p>
           </div>
         )}
@@ -250,7 +248,19 @@ export const AirdropStepForm = () => {
             >
               {activeStep === 4 ? (
                 <FormRescueFundsLoading
-                  formRescueFundsLoadingStatus={formRescueFundsLoadingStatus}
+                  formRescueFundsLoadingStatus={
+                    success
+                      ? 'success'
+                      : failed || errorSubmitting
+                        ? 'error'
+                        : loading
+                          ? 'loading'
+                          : 'loading'
+                  }
+                  tryAgain={() => {
+                    setErrorSubmitting(false);
+                    handleSubmit(onSubmit)();
+                  }}
                 />
               ) : (
                 getStepContent(activeStep)

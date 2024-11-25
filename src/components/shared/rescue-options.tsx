@@ -24,10 +24,10 @@ interface RescueOptionsProps {
 export const RescueOptions: FC<RescueOptionsProps> = ({ rescueOptions }) => (
   <Card
     withBackground={false}
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    transition={{ duration: 1, delayChildren: 0.5 }}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.2 }}
     className="mb-3 flex flex-col px-2 py-8 md:py-12"
   >
     <CardHeader className="mb-8 flex flex-col items-center gap-y-10">

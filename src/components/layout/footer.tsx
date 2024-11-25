@@ -1,6 +1,7 @@
 'use client';
 
 import { IconBrandGithub } from '@tabler/icons-react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import React from 'react';
 
@@ -15,7 +16,14 @@ export const Footer = () => {
   const { open } = useSidebar();
 
   return (
-    <footer className="absolute bottom-4 left-0 flex w-full flex-col items-center">
+    <motion.footer
+      className="absolute bottom-1 left-0 flex w-full flex-col items-center"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.3 }}
+      layout="preserve-aspect"
+    >
       <section
         className={cn(
           'flex w-[95%] justify-center transition-all duration-300',
@@ -53,6 +61,6 @@ export const Footer = () => {
           <QuestionsLinkButton />
         </div>
       </section>
-    </footer>
+    </motion.footer>
   );
 };

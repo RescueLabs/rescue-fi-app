@@ -6,7 +6,10 @@ import {
   IconCircleX,
 } from '@tabler/icons-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 
 export type FormRescueFundsLoadingStatus = 'loading' | 'success' | 'error';
 
@@ -50,8 +53,10 @@ const IconWrapper = ({ children }: { children: React.ReactNode }) => (
 
 export const FormRescueFundsLoading = ({
   formRescueFundsLoadingStatus,
+  tryAgain,
 }: {
   formRescueFundsLoadingStatus: FormRescueFundsLoadingStatus;
+  tryAgain?: () => void;
 }) => {
   const [particles, setParticles] = useState<number[]>([]);
 
@@ -160,18 +165,7 @@ export const FormRescueFundsLoading = ({
         >
           {formRescueFundsLoadingStatus === 'loading' ? (
             <span className="inline-block">
-              <motion.span
-                animate={{ y: [0, -10, 0] }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0,
-                }}
-                className="inline-block"
-              >
-                {subtext}
-              </motion.span>
+              <span className="inline-block">{subtext}</span>
               <motion.span
                 animate={{ opacity: [0, 1, 0] }}
                 transition={{
@@ -213,6 +207,27 @@ export const FormRescueFundsLoading = ({
             subtext
           )}
         </motion.div>
+
+        {formRescueFundsLoadingStatus === 'success' && (
+          <Link href="/">
+            <Button variant="outline" className="mt-4">
+              Go to Home
+            </Button>
+          </Link>
+        )}
+
+        {formRescueFundsLoadingStatus === 'error' && (
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={(e) => {
+              e.preventDefault();
+              tryAgain?.();
+            }}
+          >
+            Try Again
+          </Button>
+        )}
       </motion.div>
     </div>
   );
