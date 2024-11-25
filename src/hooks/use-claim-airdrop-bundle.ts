@@ -75,27 +75,11 @@ export const useClaimAirdropBundle = ({
       data: '0x' as `0x${string}`,
       chainId: SEPOLIA_CHAIN_ID,
     });
-    console.log('tx1', {
-      to: victimAccount.address,
-      value: (gas - BigInt(21000)) * gasPrice,
-      nonce: rescuerNonce,
-      gasPrice,
-      gas: BigInt(21000),
-      data: '0x' as `0x${string}`,
-    });
     let etherTx = ethers.Transaction.from(signedTransaction1);
     const txHash1 = keccak256(etherTx.serialized);
 
     // transaction to claim airdrop
     const signedTransaction2 = await victimAccount.signTransaction({
-      to: airdropContractAddress,
-      value: BigInt(0),
-      nonce: victimNonce,
-      gasPrice,
-      data,
-      gas: txGases[1],
-    });
-    console.log('tx2', {
       to: airdropContractAddress,
       value: BigInt(0),
       nonce: victimNonce,
@@ -118,17 +102,7 @@ export const useClaimAirdropBundle = ({
       ]) as `0x${string}`,
       gas: txGases[2],
     });
-    console.log('tx3', {
-      to: tokenAddress,
-      value: BigInt(0),
-      nonce: victimNonce + 1,
-      gasPrice,
-      data: erc20Interface.encodeFunctionData('transfer', [
-        receiverAddress,
-        amount,
-      ]) as `0x${string}`,
-      gas: txGases[2],
-    });
+
     etherTx = ethers.Transaction.from(signedTransaction3);
     const txHash3 = keccak256(etherTx.serialized);
 
@@ -138,7 +112,7 @@ export const useClaimAirdropBundle = ({
       { tx: signedTransaction3 ?? '', canRevert: false },
     ];
     const blockNumber = await publicClient.getBlockNumber();
-    let bundleResult: ISendBundleResult;
+    let bundleResult: ISendBundleResult = { bundleHash: '' };
     try {
       bundleResult = (
         await axios.post('/api/send-bundle', {
@@ -150,7 +124,6 @@ export const useClaimAirdropBundle = ({
       console.log('ClaimAirdropBundleError', error);
       setFailed(true);
       setLoading(false);
-      bundleResult = { bundleHash: '' };
     }
 
     return {

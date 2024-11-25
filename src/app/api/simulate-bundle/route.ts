@@ -13,8 +13,8 @@ export const POST = async (req: NextRequest) => {
   let result = await mevShareClient.simulateBundle({
     body: bundle,
     inclusion: {
-      block: blockNumber + 1,
-      maxBlock: blockNumber + 24,
+      block: Number(blockNumber) + 1,
+      maxBlock: Number(blockNumber) + 24,
     },
   });
 

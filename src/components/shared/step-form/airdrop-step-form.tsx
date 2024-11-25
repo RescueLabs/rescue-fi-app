@@ -161,19 +161,18 @@ export const AirdropStepForm = () => {
     gasInWei: bigint;
   }>();
 
-  const { sendBundle, loading, success, failed, watchBundle } =
-    useClaimAirdropBundle({
-      victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
-      rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
-      receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
-      tokenAddress: SEPOLIA_TOKEN_ADDRESS,
-      airdropContractAddress: SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
-      data: SEPOLIA_AIRDROP_DATA,
-      txGases: gas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
-      amount: SEPOLIA_RESCUE_TOKEN_AMOUNT,
-      gasPrice: gas?.gasPrice ?? BigInt(0),
-      gas: gas?.gas ?? BigInt(0),
-    });
+  const { sendBundle, watchBundle } = useClaimAirdropBundle({
+    victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
+    rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
+    receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
+    tokenAddress: SEPOLIA_TOKEN_ADDRESS,
+    airdropContractAddress: SEPOLIA_AIRDROP_CONTRACT_ADDRESS,
+    data: SEPOLIA_AIRDROP_DATA,
+    txGases: gas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
+    amount: SEPOLIA_RESCUE_TOKEN_AMOUNT,
+    gasPrice: gas?.gasPrice ?? BigInt(0),
+    gas: gas?.gas ?? BigInt(0),
+  });
 
   const { simulateBundle } = useSimulateBundle();
 
@@ -195,15 +194,8 @@ export const AirdropStepForm = () => {
     calculateGas();
   }, [estimateClaimAirdropGas, estimateRescueTokenGas]);
 
-  useEffect(() => {
-    console.log('loading', loading);
-    console.log('success', success);
-    console.log('failed', failed);
-  }, [loading, success, failed]);
-
   const sendBundleAndWatch = useCallback(async () => {
     const { txHashes, bundle, maxBlockNumber, bundleHash } = await sendBundle();
-    console.log('maxBlockNumber', maxBlockNumber, bundleHash);
     if (bundleHash) {
       simulateBundle(bundle as BundleParams['body']);
       watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);

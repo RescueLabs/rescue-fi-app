@@ -150,16 +150,15 @@ export const WalletStepForm = () => {
     gasInWei: bigint;
   }>();
 
-  const { sendBundle, loading, success, failed, watchBundle } =
-    useRescueTokenBundle({
-      victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
-      rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
-      receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
-      tokenAddress: SEPOLIA_TOKEN_ADDRESS,
-      amount: BigInt('1000000000000000000'),
-      gasPrice: gas?.gasPrice ?? BigInt(0),
-      gas: gas?.gas ?? BigInt(0),
-    });
+  const { sendBundle, watchBundle } = useRescueTokenBundle({
+    victimPrivateKey: SEPOLIA_VICTIM_PRIVATE_KEY,
+    rescuerPrivateKey: SEPOLIA_RESCUER_PRIVATE_KEY,
+    receiverAddress: SEPOLIA_RECEIVER_ADDRESS,
+    tokenAddress: SEPOLIA_TOKEN_ADDRESS,
+    amount: BigInt('1000000000000000000'),
+    gasPrice: gas?.gasPrice ?? BigInt(0),
+    gas: gas?.gas ?? BigInt(0),
+  });
 
   useEffect(() => {
     const calculateGas = async () => {
@@ -168,12 +167,6 @@ export const WalletStepForm = () => {
     };
     calculateGas();
   }, [estimateRescueTokenGas]);
-
-  useEffect(() => {
-    console.log('loading', loading);
-    console.log('success', success);
-    console.log('failed', failed);
-  }, [loading, success, failed]);
 
   const sendBundleAndWatch = useCallback(async () => {
     const { txHashes, maxBlockNumber, bundle, bundleHash } = await sendBundle();

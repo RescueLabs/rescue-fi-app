@@ -21,19 +21,14 @@ export const useWatchBundle = () => {
         console.log('WatchBundleError', error);
         result = { data: { data: { EstimateTimeInSec: '360' } } };
       }
+      // 15s buffer
       const timeout = Number(result.data.data.EstimateTimeInSec) * 1000 + 15000;
-      console.log(
-        'deadline',
-        new Date(new Date().getTime() + timeout).toString(),
-      );
 
       try {
-        console.log('waiting for tx receipt', txHash);
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: txHash,
           timeout,
         });
-        console.log('tx receipt', receipt);
         if (receipt.status === 'success') {
           setSuccess(true);
         } else {
