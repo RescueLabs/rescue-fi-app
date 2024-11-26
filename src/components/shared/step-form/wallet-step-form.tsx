@@ -66,6 +66,9 @@ export const WalletStepForm = () => {
   } = useEthBalance({
     rescuerPrivateKey,
     balanceNeeded: gas?.gasInWei,
+    options: {
+      enabled: activeStep === 2,
+    },
   });
 
   const handleNext = useCallback(() => {

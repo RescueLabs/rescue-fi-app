@@ -80,6 +80,9 @@ export const AirdropStepForm = () => {
   } = useEthBalance({
     rescuerPrivateKey,
     balanceNeeded: calculatedGas?.gasInWei,
+    options: {
+      enabled: activeStep === 3,
+    },
   });
 
   const handleNext = useCallback(() => {

@@ -11,9 +11,13 @@ import {
 export const useEthBalance = ({
   rescuerPrivateKey,
   balanceNeeded,
+  options,
 }: {
   rescuerPrivateKey: string;
   balanceNeeded?: bigint;
+  options?: {
+    enabled?: boolean;
+  };
 }) => {
   const [ethBalanceEnough, setEthBalanceEnough] = useState<boolean>(false);
 
@@ -36,7 +40,8 @@ export const useEthBalance = ({
       return (balanceNeeded ?? BigInt(Number.MAX_SAFE_INTEGER)) - balance;
     },
     refetchInterval: 5000,
-    enabled: validatePrivateKey(rescuerPrivateKey) && !ethBalanceEnough,
+    enabled:
+      validatePrivateKey(rescuerPrivateKey) && (options?.enabled ?? true),
   });
 
   useEffect(() => {
