@@ -1,13 +1,13 @@
 import axios from 'axios';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { API_KEY } from '@/lib/constants';
+import { API_KEY, BASE_ETHERSCAN_URL } from '@/lib/constants';
 
 export const GET = async (req: NextRequest) => {
   const tokenAddress = req.nextUrl.searchParams.get('tokenAddress');
   const latestBlock = req.nextUrl.searchParams.get('latestBlock');
   // change url when deploy to mainnet
-  const etherscanUrl = `https://api-sepolia.etherscan.io/api?apikey=${API_KEY}&module=account&action=txlist&address=${tokenAddress}&sort=desc&endblock=${latestBlock}&startblock=0&offset=1000&page=1`;
+  const etherscanUrl = `${BASE_ETHERSCAN_URL}/api?apikey=${API_KEY}&module=account&action=txlist&address=${tokenAddress}&sort=desc&endblock=${latestBlock}&startblock=0&offset=1000&page=1`;
 
   let response;
   try {

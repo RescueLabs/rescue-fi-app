@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { MEV_AUTH_SIGNER_PRIVATE_KEY } from '@/lib/constants';
-import { getSepoliaMevShareClient } from '@/lib/flashbots';
+import { MEV_CLIENT } from '@/lib/constants';
 
 export const POST = async (req: NextRequest, res: NextResponse) => {
   const body = await req.json();
   const { bundle, blockNumber } = body;
 
-  // connect to MEV-Share on mainnet
-  const mevShareClient = getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY);
-
   let result;
   try {
-    result = await mevShareClient.sendBundle({
+    result = await MEV_CLIENT.sendBundle({
       body: bundle,
       inclusion: {
         block: Number(blockNumber) + 1,
