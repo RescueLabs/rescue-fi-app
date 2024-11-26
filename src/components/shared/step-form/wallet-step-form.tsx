@@ -46,9 +46,9 @@ export const WalletStepForm = () => {
     mode: 'onChange',
   });
 
-  const [tokenAddress, rescuerPrivateKey] = useWatch({
+  const [tokenAddress, rescuerPrivateKey, receiverWalletAddress] = useWatch({
     control: methods.control,
-    name: ['tokenAddress', 'rescuerPrivateKey'],
+    name: ['tokenAddress', 'rescuerPrivateKey', 'receiverWalletAddress'],
   });
 
   const {
@@ -250,6 +250,7 @@ export const WalletStepForm = () => {
                           ? 'loading'
                           : 'loading'
                   }
+                  balanceUrl={`https://sepolia.etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
                 />
               ) : (
                 getStepContent(activeStep)

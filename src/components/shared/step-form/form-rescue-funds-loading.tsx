@@ -54,9 +54,11 @@ const IconWrapper = ({ children }: { children: React.ReactNode }) => (
 export const FormRescueFundsLoading = ({
   formRescueFundsLoadingStatus,
   tryAgain,
+  balanceUrl,
 }: {
   formRescueFundsLoadingStatus: FormRescueFundsLoadingStatus;
   tryAgain?: () => void;
+  balanceUrl?: string;
 }) => {
   const [particles, setParticles] = useState<number[]>([]);
 
@@ -227,6 +229,17 @@ export const FormRescueFundsLoading = ({
           >
             Try Again
           </Button>
+        )}
+
+        {balanceUrl && formRescueFundsLoadingStatus === 'success' && (
+          <Link href={balanceUrl} target="_blank" className="ml-4">
+            <Button
+              className="!text-md !rounded-full border border-green-100 !text-green-500 hover:!bg-green-100 dark:border-green-900/50 dark:hover:!bg-green-900/50"
+              variant="ghost"
+            >
+              View Balance
+            </Button>
+          </Link>
         )}
       </motion.div>
     </div>

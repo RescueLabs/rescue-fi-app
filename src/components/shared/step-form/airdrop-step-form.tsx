@@ -46,16 +46,22 @@ export const AirdropStepForm = () => {
     mode: 'onChange',
   });
 
-  const [tokenAddress, airdropContractAddress, callData, rescuerPrivateKey] =
-    useWatch({
-      control: methods.control,
-      name: [
-        'tokenAddress',
-        'airdropContractAddress',
-        'callData',
-        'rescuerPrivateKey',
-      ],
-    });
+  const [
+    tokenAddress,
+    airdropContractAddress,
+    callData,
+    rescuerPrivateKey,
+    receiverWalletAddress,
+  ] = useWatch({
+    control: methods.control,
+    name: [
+      'tokenAddress',
+      'airdropContractAddress',
+      'callData',
+      'rescuerPrivateKey',
+      'receiverWalletAddress',
+    ],
+  });
 
   const [calculatedGas, setCalculatedGas] = useState<{
     gas: bigint;
@@ -106,18 +112,20 @@ export const AirdropStepForm = () => {
     const {
       gas: sendTokenGas,
       gasPrice,
-      gasInWei,
+      // gasInWei,
     } = await estimateRescueTokenGas();
     const { gas: claimAirdropGas } = await estimateClaimAirdropGas({
       airdropContractAddress,
       methodId: callData.slice(0, 10),
     });
 
+    const rawGas = sendTokenGas + claimAirdropGas + BigInt(21000);
+
     return {
-      gas: sendTokenGas + claimAirdropGas + BigInt(21000),
+      gas: rawGas,
       txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
       gasPrice,
-      gasInWei: BigInt(21000) * gasPrice + gasInWei,
+      gasInWei: rawGas * gasPrice,
     };
   }, [
     estimateRescueTokenGas,
@@ -265,6 +273,7 @@ export const AirdropStepForm = () => {
                           ? 'loading'
                           : 'loading'
                   }
+                  balanceUrl={`https://sepolia.etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
                   tryAgain={() => {
                     setErrorSubmitting(false);
                     handleSubmit(onSubmit)();

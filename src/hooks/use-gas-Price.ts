@@ -17,7 +17,6 @@ export const useGasPrice = () => {
   }, [provider]);
 
   const gasPrice = (_gasPrice * BigInt(120)) / BigInt(100);
-  console.log('gasPrice', gasPrice);
 
   return { gasPrice };
 };
