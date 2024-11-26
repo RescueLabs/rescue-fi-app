@@ -3,7 +3,12 @@ import {
   getEthereumMevShareClient,
 } from '../flashbots';
 
-export const RPC_URL = 'https://ethereum-sepolia-rpc.publicnode.com';
+export const NETWORK = process.env.NEXT_PUBLIC_NETWORK;
+
+export const RPC_URL =
+  NETWORK === 'sepolia'
+    ? 'https://ethereum-sepolia-rpc.publicnode.com'
+    : 'https://ethereum-rpc.publicnode.com';
 export const AVG_SEPOLIA_BLOCK_TIME = 13;
 export const MAX_BLOCK_NUMBER = 24;
 export const SEPOLIA_CHAIN_ID = 11155111;
@@ -11,15 +16,16 @@ export const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const MEV_AUTH_SIGNER_PRIVATE_KEY = process.env
   .MEV_AUTH_SIGNER_PRIVATE_KEY as `0x${string}`;
-export const NETWORK = process.env.NETWORK;
+
 export const BASE_ETHERSCAN_URL =
   NETWORK === 'sepolia'
     ? 'https://api-sepolia.etherscan.io'
     : 'https://api.etherscan.io';
+console.log('RPC_URL', RPC_URL, NETWORK);
 export const MEV_CLIENT =
   NETWORK === 'sepolia'
-    ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY)
-    : getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY);
+    ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL)
+    : getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL);
 
 // Test values
 export const SEPOLIA_AIRDROP_CONTRACT_ADDRESS =

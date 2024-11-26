@@ -1,8 +1,10 @@
 import MevShareClient from '@flashbots/mev-share-client';
 import { JsonRpcProvider, Wallet } from 'ethers';
 
-export const getSepoliaMevShareClient = (privateKey: string) => {
-  const rpcUrl = 'https://ethereum-sepolia-rpc.publicnode.com';
+export const getSepoliaMevShareClient = (
+  privateKey: string,
+  rpcUrl: string,
+) => {
   const provider = new JsonRpcProvider(rpcUrl);
   const authSigner = new Wallet(privateKey, provider);
 
@@ -12,8 +14,10 @@ export const getSepoliaMevShareClient = (privateKey: string) => {
   });
 };
 
-export const getEthereumMevShareClient = (privateKey: string) => {
-  const rpcUrl = 'https://ethereum-mainnet-rpc.publicnode.com';
+export const getEthereumMevShareClient = (
+  privateKey: string,
+  rpcUrl: string,
+) => {
   const provider = new JsonRpcProvider(rpcUrl);
   const authSigner = new Wallet(privateKey, provider);
 

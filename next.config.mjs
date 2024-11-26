@@ -12,6 +12,9 @@ const nextConfig = {
       },
     ],
   },
+  env: {
+    MEV_AUTH_SIGNER_PRIVATE_KEY: process.env.MEV_AUTH_SIGNER_PRIVATE_KEY,
+  }
 };
 
 export default nextConfig;
