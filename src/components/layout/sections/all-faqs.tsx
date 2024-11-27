@@ -58,7 +58,7 @@ export const AllFaqs = () => {
         transition={{ duration: 0.2 }}
         className="w-full"
       >
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="mb-8 w-full">
           {allFaqs.map((faq, index) => (
             <AccordionItem value={`item-${index + 1}`} key={index}>
               <AccordionTrigger>{faq.question}</AccordionTrigger>
