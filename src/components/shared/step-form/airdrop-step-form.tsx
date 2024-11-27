@@ -66,7 +66,8 @@ export const AirdropStepForm = () => {
   const [calculatedGas, setCalculatedGas] = useState<{
     gas: bigint;
     txGases: bigint[];
-    gasPrice: bigint;
+    maxFeePerGas: bigint;
+    maxPriorityFeePerGas: bigint;
     gasInWei: bigint;
   }>();
 
@@ -106,12 +107,14 @@ export const AirdropStepForm = () => {
   const calculateGas = useCallback(async (): Promise<{
     gas: bigint;
     txGases: bigint[];
-    gasPrice: bigint;
+    maxFeePerGas: bigint;
+    maxPriorityFeePerGas: bigint;
     gasInWei: bigint;
   }> => {
     const {
       gas: sendTokenGas,
-      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
       // gasInWei,
     } = await estimateRescueTokenGas();
     const { gas: claimAirdropGas } = await estimateClaimAirdropGas({
@@ -124,8 +127,9 @@ export const AirdropStepForm = () => {
     return {
       gas: rawGas,
       txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
-      gasPrice,
-      gasInWei: rawGas * gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      gasInWei: rawGas * maxFeePerGas,
     };
   }, [
     estimateRescueTokenGas,
@@ -158,7 +162,8 @@ export const AirdropStepForm = () => {
           data: formData.callData,
           txGases: calcGas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
           amount: BigInt(parseUnits(formData.amountToSalvage, decimals)),
-          gasPrice: calcGas?.gasPrice ?? BigInt(0),
+          maxFeePerGas: calcGas?.maxFeePerGas ?? BigInt(0),
+          maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
           gas: calcGas?.gas ?? BigInt(0),
         },
       );

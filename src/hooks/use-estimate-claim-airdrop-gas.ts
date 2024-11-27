@@ -10,7 +10,7 @@ const publicClient = getPublicClient();
 // returns gas for rescuing wallet fund in WEI
 export const useEstimateClaimAirdropGas = () => {
   // todo: make sure this updates
-  const { gasPrice } = useGasPrice();
+  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
 
   const estimateGas = useCallback(
     async ({
@@ -31,12 +31,13 @@ export const useEstimateClaimAirdropGas = () => {
 
       const gas = BigInt(response.data.data);
       return {
-        gasInWei: gas * gasPrice, // ethereum to send
+        gasInWei: gas * maxFeePerGas, // ethereum to send
         gas,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
       };
     },
-    [gasPrice],
+    [maxFeePerGas, maxPriorityFeePerGas],
   );
 
   return estimateGas;

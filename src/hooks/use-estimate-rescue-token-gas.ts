@@ -10,11 +10,16 @@ const publicClient = getPublicClient();
 // returns gas for rescuing wallet fund in WEI
 export const useEstimateRescueTokenGas = (tokenAddress: string) => {
   // todo: make sure this updates
-  const { gasPrice } = useGasPrice();
+  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
 
   const estimateGas = useCallback(async () => {
     if (!validateTokenAddress(tokenAddress))
-      return { gasInWei: BigInt(0), gas: BigInt(0), gasPrice };
+      return {
+        gasInWei: BigInt(0),
+        gas: BigInt(0),
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+      };
 
     const latestBlock = await publicClient.getBlockNumber();
     const response = await axios.get('/api/estimate-send-token-gas', {
@@ -26,11 +31,12 @@ export const useEstimateRescueTokenGas = (tokenAddress: string) => {
 
     const gas = BigInt(response.data.data);
     return {
-      gasInWei: gas * gasPrice, // ethereum to send
+      gasInWei: gas * maxFeePerGas, // ethereum to send
       gas,
-      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
     };
-  }, [tokenAddress, gasPrice]);
+  }, [tokenAddress, maxFeePerGas, maxPriorityFeePerGas]);
 
   return estimateGas;
 };

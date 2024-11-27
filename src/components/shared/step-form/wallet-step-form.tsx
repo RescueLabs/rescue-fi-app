@@ -15,6 +15,7 @@ import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
+import { NETWORK } from '@/lib/constants';
 import { roundToFiveDecimals, validateTokenAddress } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 
@@ -38,7 +39,8 @@ export const WalletStepForm = () => {
   const [erroredInputName, setErroredInputName] = useState<string>('');
   const [gas, setGas] = useState<{
     gas: bigint;
-    gasPrice: bigint;
+    maxFeePerGas: bigint;
+    maxPriorityFeePerGas: bigint;
     gasInWei: bigint;
   }>();
 
@@ -92,12 +94,14 @@ export const WalletStepForm = () => {
       victimPrivateKey,
       receiverAddress,
       amount,
-      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
     }: {
       victimPrivateKey: `0x${string}`;
       receiverAddress: `0x${string}`;
       amount: bigint;
-      gasPrice: bigint;
+      maxFeePerGas: bigint;
+      maxPriorityFeePerGas: bigint;
     }) => {
       const { txHashes, bundle, bundleHash, maxBlockNumber } = await sendBundle(
         {
@@ -106,7 +110,8 @@ export const WalletStepForm = () => {
           receiverAddress,
           tokenAddress,
           amount,
-          gasPrice,
+          maxFeePerGas: gas?.maxFeePerGas ?? BigInt(0),
+          maxPriorityFeePerGas: gas?.maxPriorityFeePerGas ?? BigInt(0),
           gas: gas?.gas ?? BigInt(0),
         },
       );
@@ -120,12 +125,18 @@ export const WalletStepForm = () => {
   );
 
   const calculateGas = useCallback(async () => {
-    const { gas: _gas, gasPrice, gasInWei } = await estimateRescueTokenGas();
+    const {
+      gas: _gas,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      gasInWei,
+    } = await estimateRescueTokenGas();
 
     return {
       gas: _gas + BigInt(21000),
-      gasPrice,
-      gasInWei: gasInWei + BigInt(21000) * gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      gasInWei: gasInWei + BigInt(21000) * maxFeePerGas,
     }; // 21000 is the gas for sending the gas to victim
   }, [estimateRescueTokenGas]);
 
@@ -145,7 +156,8 @@ export const WalletStepForm = () => {
         amount: BigInt(
           Number(formData.amountToSalvage) * 10 ** Number(decimals),
         ),
-        gasPrice: calcGas?.gasPrice ?? BigInt(0),
+        maxFeePerGas: calcGas?.maxFeePerGas ?? BigInt(0),
+        maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
       });
     } catch (error: any) {
       console.log(error);
@@ -250,7 +262,7 @@ export const WalletStepForm = () => {
                           ? 'loading'
                           : 'loading'
                   }
-                  balanceUrl={`https://sepolia.etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
+                  balanceUrl={`https://${NETWORK === 'sepolia' ? 'sepolia.' : ''}etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
                 />
               ) : (
                 getStepContent(activeStep)

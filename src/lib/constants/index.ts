@@ -21,7 +21,7 @@ export const BASE_ETHERSCAN_URL =
   NETWORK === 'sepolia'
     ? 'https://api-sepolia.etherscan.io'
     : 'https://api.etherscan.io';
-console.log('RPC_URL', RPC_URL, NETWORK);
+export const CHAIN_ID = NETWORK === 'sepolia' ? SEPOLIA_CHAIN_ID : 1;
 export const MEV_CLIENT =
   NETWORK === 'sepolia'
     ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL)

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { ethers, Interface, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 
-import { MAX_BLOCK_NUMBER, SEPOLIA_CHAIN_ID } from '@/lib/constants';
+import { MAX_BLOCK_NUMBER, CHAIN_ID } from '@/lib/constants';
 
 import {
   getPrivateKeyAccount,
@@ -41,7 +41,8 @@ export const useClaimAirdropBundle = () => {
       data,
       amount,
       txGases,
-      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
       gas,
     }: {
       victimPrivateKey: `0x${string}`;
@@ -51,7 +52,8 @@ export const useClaimAirdropBundle = () => {
       data: `0x${string}`;
       airdropContractAddress: `0x${string}`;
       amount: bigint;
-      gasPrice: bigint;
+      maxFeePerGas: bigint;
+      maxPriorityFeePerGas: bigint;
       gas: bigint;
       txGases: bigint[];
     }) => {
@@ -82,12 +84,13 @@ export const useClaimAirdropBundle = () => {
 
       const signedTransaction1 = await rescuerAccount.signTransaction({
         to: victimAccount.address,
-        value: (gas - BigInt(21000)) * gasPrice,
+        value: (gas - BigInt(21000)) * maxFeePerGas,
         nonce: rescuerNonce,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
         gas: BigInt(21000),
         data: '0x' as `0x${string}`,
-        chainId: SEPOLIA_CHAIN_ID,
+        chainId: CHAIN_ID,
       });
       let etherTx = ethers.Transaction.from(signedTransaction1);
       const txHash1 = keccak256(etherTx.serialized);
@@ -97,9 +100,11 @@ export const useClaimAirdropBundle = () => {
         to: airdropContractAddress,
         value: BigInt(0),
         nonce: victimNonce,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
         data,
         gas: txGases[1],
+        chainId: CHAIN_ID,
       });
 
       etherTx = ethers.Transaction.from(signedTransaction2);
@@ -110,12 +115,14 @@ export const useClaimAirdropBundle = () => {
         to: tokenAddress,
         value: BigInt(0),
         nonce: victimNonce + 1,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
         data: erc20Interface.encodeFunctionData('transfer', [
           receiverAddress,
           amount,
         ]) as `0x${string}`,
         gas: txGases[2],
+        chainId: CHAIN_ID,
       });
 
       etherTx = ethers.Transaction.from(signedTransaction3);

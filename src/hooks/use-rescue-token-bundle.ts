@@ -4,11 +4,7 @@ import axios from 'axios';
 import { ethers, Interface, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 
-import {
-  MAX_BLOCK_NUMBER,
-  SEPOLIA_CHAIN_ID,
-  ZERO_ADDRESS,
-} from '@/lib/constants';
+import { MAX_BLOCK_NUMBER, ZERO_ADDRESS, CHAIN_ID } from '@/lib/constants';
 
 import {
   getPrivateKeyAccount,
@@ -42,7 +38,8 @@ export const useRescueTokenBundle = () => {
       receiverAddress,
       tokenAddress,
       amount,
-      gasPrice,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
       gas,
     }: {
       victimPrivateKey: `0x${string}`;
@@ -50,7 +47,8 @@ export const useRescueTokenBundle = () => {
       receiverAddress: `0x${string}`;
       tokenAddress: `0x${string}`;
       amount: bigint;
-      gasPrice: bigint;
+      maxFeePerGas: bigint;
+      maxPriorityFeePerGas: bigint;
       gas: bigint;
     }) => {
       const victimAccount = getPrivateKeyAccount(victimPrivateKey);
@@ -80,12 +78,13 @@ export const useRescueTokenBundle = () => {
       // transaction to send ETH to victim wallet for gas
       const signedTransaction1 = await rescuerAccount?.signTransaction({
         to: victimAccount?.address ?? ZERO_ADDRESS,
-        value: (gas - BigInt(21000)) * gasPrice,
+        value: (gas - BigInt(21000)) * maxFeePerGas,
         nonce: rescuerNonce,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
         gas: BigInt(21000),
         data: '0x' as `0x${string}`,
-        chainId: SEPOLIA_CHAIN_ID,
+        chainId: CHAIN_ID,
       });
       let etherTx = ethers.Transaction.from(signedTransaction1);
       const txHash1 = keccak256(etherTx.serialized);
@@ -95,12 +94,14 @@ export const useRescueTokenBundle = () => {
         to: tokenAddress,
         value: BigInt(0),
         nonce: victimNonce,
-        gasPrice,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
         data: erc20Interface.encodeFunctionData('transfer', [
           receiverAddress,
           amount,
         ]) as `0x${string}`,
         gas: gas - BigInt(21000),
+        chainId: CHAIN_ID,
       });
 
       etherTx = ethers.Transaction.from(signedTransaction2);

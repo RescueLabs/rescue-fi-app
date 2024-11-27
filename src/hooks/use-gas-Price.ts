@@ -6,17 +6,29 @@ import { RPC_URL } from '@/lib/constants';
 export const useGasPrice = () => {
   const provider = useMemo(() => new JsonRpcProvider(RPC_URL), []);
 
-  const [_gasPrice, setGasPrice] = useState<bigint>(BigInt(0));
+  const [{ maxFeePerGas, maxPriorityFeePerGas }, setGasPrice] = useState<{
+    maxFeePerGas: bigint;
+    maxPriorityFeePerGas: bigint;
+  }>({ maxFeePerGas: BigInt(0), maxPriorityFeePerGas: BigInt(0) });
 
   useEffect(() => {
     async function getFeeData() {
       const feeData = await provider.getFeeData();
-      setGasPrice(BigInt(Number(feeData.gasPrice)));
+      setGasPrice({
+        maxFeePerGas: feeData.maxFeePerGas ?? BigInt(0),
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ?? BigInt(0),
+      });
     }
     getFeeData();
   }, [provider]);
 
-  const gasPrice = (_gasPrice * BigInt(120)) / BigInt(100);
+  let _maxFeePerGas = (maxFeePerGas * BigInt(140)) / BigInt(100);
+  const _maxPriorityFeePerGas =
+    (maxPriorityFeePerGas * BigInt(120)) / BigInt(100);
+  _maxFeePerGas += _maxPriorityFeePerGas - maxPriorityFeePerGas;
 
-  return { gasPrice };
+  return {
+    maxFeePerGas: _maxFeePerGas,
+    maxPriorityFeePerGas: _maxPriorityFeePerGas,
+  };
 };
