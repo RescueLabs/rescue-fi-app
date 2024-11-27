@@ -12,6 +12,9 @@ export const POST = async (req: NextRequest) => {
       block: Number(blockNumber) + 1,
       maxBlock: Number(blockNumber) + 24,
     },
+    privacy: {
+      builders: ['flashbots', 'beaverbuild.org', 'rsync', 'Titan'],
+    },
   });
 
   result = JSON.parse(

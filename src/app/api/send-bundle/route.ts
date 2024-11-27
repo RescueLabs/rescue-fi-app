@@ -14,6 +14,9 @@ export const POST = async (req: NextRequest, res: NextResponse) => {
         block: Number(blockNumber) + 1,
         maxBlock: Number(blockNumber) + 24,
       },
+      privacy: {
+        builders: ['flashbots', 'beaverbuild.org', 'rsync', 'Titan'],
+      },
     });
   } catch (error) {
     console.log('SendBundleError', error);
