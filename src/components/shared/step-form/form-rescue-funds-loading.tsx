@@ -233,15 +233,9 @@ export const FormRescueFundsLoading = ({
 
         {balanceUrl && formRescueFundsLoadingStatus === 'success' && (
           <Link href={balanceUrl} target="_blank" className="ml-4">
-            <Button
-              className="!text-md pointer-events-none !rounded-full border border-green-100 !text-green-500 hover:!bg-green-100 dark:border-green-900/50 dark:hover:!bg-green-900/50"
-              variant="ghost"
-              onClick={(e) => {
-                e.preventDefault();
-              }}
-            >
+            <span className="!text-md !rounded-full border border-green-100 px-[10px] py-2 !text-green-500 hover:!bg-green-100 dark:border-green-900/50 dark:hover:!bg-green-900/50">
               View Balance
-            </Button>
+            </span>
           </Link>
         )}
       </motion.div>
