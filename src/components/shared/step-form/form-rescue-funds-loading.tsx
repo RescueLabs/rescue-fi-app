@@ -236,6 +236,9 @@ export const FormRescueFundsLoading = ({
             <Button
               className="!text-md !rounded-full border border-green-100 !text-green-500 hover:!bg-green-100 dark:border-green-900/50 dark:hover:!bg-green-900/50"
               variant="ghost"
+              onClick={(e) => {
+                e.preventDefault();
+              }}
             >
               View Balance
             </Button>

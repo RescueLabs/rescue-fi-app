@@ -36,6 +36,7 @@ const getStepContent = (step: number) => {
 
 export const WalletStepForm = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
+  const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
   const [erroredInputName, setErroredInputName] = useState<string>('');
   const [gas, setGas] = useState<{
     gas: bigint;
@@ -160,6 +161,7 @@ export const WalletStepForm = () => {
         maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
       });
     } catch (error: any) {
+      setErrorSubmitting(true);
       console.log(error);
     }
   };
@@ -256,12 +258,16 @@ export const WalletStepForm = () => {
                   formRescueFundsLoadingStatus={
                     success
                       ? 'success'
-                      : failed
+                      : failed || errorSubmitting
                         ? 'error'
                         : loading
                           ? 'loading'
                           : 'loading'
                   }
+                  tryAgain={() => {
+                    setErrorSubmitting(false);
+                    handleSubmit(onSubmit)();
+                  }}
                   balanceUrl={`https://${NETWORK === 'sepolia' ? 'sepolia.' : ''}etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
                 />
               ) : (
