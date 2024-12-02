@@ -81,8 +81,7 @@ export const useClaimAirdropBundle = () => {
       });
 
       // transaction to send ETH to victim wallet for gas
-
-      const signedTransaction1 = await rescuerAccount.signTransaction({
+      const tx1 = {
         to: victimAccount.address,
         value: (gas - BigInt(21000)) * maxFeePerGas,
         nonce: rescuerNonce,
@@ -91,12 +90,13 @@ export const useClaimAirdropBundle = () => {
         gas: BigInt(21000),
         data: '0x' as `0x${string}`,
         chainId: CHAIN_ID,
-      });
+      };
+      const signedTransaction1 = await rescuerAccount.signTransaction(tx1);
       let etherTx = ethers.Transaction.from(signedTransaction1);
       const txHash1 = keccak256(etherTx.serialized);
 
       // transaction to claim airdrop
-      const signedTransaction2 = await victimAccount.signTransaction({
+      const tx2 = {
         to: airdropContractAddress,
         value: BigInt(0),
         nonce: victimNonce,
@@ -105,13 +105,14 @@ export const useClaimAirdropBundle = () => {
         data,
         gas: txGases[1],
         chainId: CHAIN_ID,
-      });
+      };
 
+      const signedTransaction2 = await victimAccount.signTransaction(tx2);
       etherTx = ethers.Transaction.from(signedTransaction2);
       const txHash2 = keccak256(etherTx.serialized);
 
       // transaction to send token to receiver
-      const signedTransaction3 = await victimAccount.signTransaction({
+      const tx3 = {
         to: tokenAddress,
         value: BigInt(0),
         nonce: victimNonce + 1,
@@ -123,7 +124,8 @@ export const useClaimAirdropBundle = () => {
         ]) as `0x${string}`,
         gas: txGases[2],
         chainId: CHAIN_ID,
-      });
+      };
+      const signedTransaction3 = await victimAccount.signTransaction(tx3);
 
       etherTx = ethers.Transaction.from(signedTransaction3);
       const txHash3 = keccak256(etherTx.serialized);
