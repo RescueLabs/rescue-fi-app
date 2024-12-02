@@ -16,7 +16,11 @@ import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
 import { NETWORK } from '@/lib/constants';
-import { roundToFiveDecimals, validateTokenAddress } from '@/lib/utils';
+import {
+  roundToFiveDecimals,
+  validatePrivateKey,
+  validateTokenAddress,
+} from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 
 import { FormRescueFundsLoading } from './form-rescue-funds-loading';
@@ -220,7 +224,8 @@ export const WalletStepForm = () => {
                 {ethBalanceEnough
                   ? 'All set!'
                   : `Please send ${
-                      !isNaN(Number(ethRemainingBalance))
+                      !isNaN(Number(ethRemainingBalance)) &&
+                      validatePrivateKey(rescuerPrivateKey)
                         ? roundToFiveDecimals(
                             Number(ethRemainingBalance) / 10 ** 18,
                           )

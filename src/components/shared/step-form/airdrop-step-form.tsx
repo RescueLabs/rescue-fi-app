@@ -17,7 +17,11 @@ import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
-import { roundToFiveDecimals, validateTokenAddress } from '@/lib/utils';
+import {
+  roundToFiveDecimals,
+  validatePrivateKey,
+  validateTokenAddress,
+} from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 
 import { AirdropContractInfo } from './aidrop-contract-info';
@@ -234,7 +238,8 @@ export const AirdropStepForm = () => {
                 {ethBalanceEnough
                   ? 'All set!'
                   : `Please send ${
-                      !isNaN(Number(ethRemainingBalance))
+                      !isNaN(Number(ethRemainingBalance)) &&
+                      validatePrivateKey(rescuerPrivateKey)
                         ? roundToFiveDecimals(
                             Number(ethRemainingBalance) / 10 ** 18,
                           )

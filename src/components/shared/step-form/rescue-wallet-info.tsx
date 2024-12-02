@@ -1,5 +1,6 @@
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { IconInfoCircle } from '@tabler/icons-react';
+import Link from 'next/link';
 import React, { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 
@@ -38,7 +39,14 @@ export const RescueWalletInfo = () => {
           <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 text-yellow-700 dark:text-yellow-400" />
           <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
             Please ensure the Rescuer wallet is a fresh wallet to reduce
-            potential loss of funds.Visit this link for more info.
+            potential loss of funds. Visit{' '}
+            <Link
+              className="underline"
+              href="/faqs?faqId=why-do-i-need-to-provide-a-fresh-wallet-to-rescue-my-funds"
+            >
+              this link
+            </Link>{' '}
+            for more info.
           </span>
         </p>
       </div>
