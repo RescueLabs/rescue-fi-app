@@ -122,11 +122,20 @@ export const WalletStepForm = () => {
       );
 
       if (bundleHash) {
-        simulateBundle(bundle as BundleParams['body']);
+        await simulateBundle(bundle as BundleParams['body']);
         watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
       }
     },
-    [sendBundle, watchBundle, gas, tokenAddress, rescuerPrivateKey],
+    [
+      sendBundle,
+      rescuerPrivateKey,
+      tokenAddress,
+      gas?.maxFeePerGas,
+      gas?.maxPriorityFeePerGas,
+      gas?.gas,
+      simulateBundle,
+      watchBundle,
+    ],
   );
 
   const calculateGas = useCallback(async () => {

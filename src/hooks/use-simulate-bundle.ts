@@ -14,6 +14,10 @@ export const useSimulateBundle = () => {
     });
 
     console.log(result.data.data);
+
+    if (result.data.data.error === 'tx failed') {
+      throw new Error('tx failed');
+    }
   }, []);
 
   return { simulateBundle };
