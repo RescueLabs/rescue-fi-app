@@ -10,17 +10,20 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
 import { useEthBalance } from '@/hooks/use-eth-balance';
+import { useGasPrice } from '@/hooks/use-gas-Price';
 import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
-import { NETWORK } from '@/lib/constants';
+import { ERC20_INTERFACE, NETWORK } from '@/lib/constants';
 import {
+  getPrivateKeyAccount,
+  getPublicClient,
   roundToFiveDecimals,
   validatePrivateKey,
   validateTokenAddress,
 } from '@/lib/utils';
+import { GasDetails } from '@/types/gas';
 import { StepperFormValues } from '@/types/hook-stepper';
 
 import { FormRescueFundsLoading } from './form-rescue-funds-loading';
@@ -42,28 +45,33 @@ export const WalletStepForm = () => {
   const [activeStep, setActiveStep] = useState<number>(1);
   const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
   const [erroredInputName, setErroredInputName] = useState<string>('');
-  const [gas, setGas] = useState<{
-    gas: bigint;
-    maxFeePerGas: bigint;
-    maxPriorityFeePerGas: bigint;
-    gasInWei: bigint;
-  }>();
 
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
 
-  const [tokenAddress, rescuerPrivateKey, receiverWalletAddress] = useWatch({
+  const [
+    tokenAddress,
+    rescuerPrivateKey,
+    receiverWalletAddress,
+    victimPrivateKey,
+  ] = useWatch({
     control: methods.control,
-    name: ['tokenAddress', 'rescuerPrivateKey', 'receiverWalletAddress'],
+    name: [
+      'tokenAddress',
+      'rescuerPrivateKey',
+      'receiverWalletAddress',
+      'victimPrivateKey',
+    ],
   });
+  const [gasDetails, setGasDetails] = useState<GasDetails>();
 
+  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
   const {
     handleSubmit,
     formState: { isSubmitting, isValid },
   } = methods;
 
-  const estimateRescueTokenGas = useEstimateRescueTokenGas(tokenAddress);
   const { getTokenDetails } = useTokenDetails();
 
   const {
@@ -72,13 +80,14 @@ export const WalletStepForm = () => {
     isFetchingEthRemainingBalance,
   } = useEthBalance({
     rescuerPrivateKey,
-    balanceNeeded: gas?.gasInWei,
+    balanceNeeded: gasDetails?.gasInWei,
     options: {
       enabled: activeStep === 2,
     },
   });
 
   const handleNext = useCallback(() => {
+    console.log('handleNext', isValid, activeStep, ethBalanceEnough);
     if (
       (isValid && activeStep !== 2) ||
       (isValid && activeStep === 2 && ethBalanceEnough)
@@ -96,17 +105,12 @@ export const WalletStepForm = () => {
 
   const sendBundleAndWatch = useCallback(
     async ({
-      victimPrivateKey,
       receiverAddress,
       amount,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
     }: {
       victimPrivateKey: `0x${string}`;
       receiverAddress: `0x${string}`;
       amount: bigint;
-      maxFeePerGas: bigint;
-      maxPriorityFeePerGas: bigint;
     }) => {
       const { txHashes, bundle, bundleHash, maxBlockNumber } = await sendBundle(
         {
@@ -115,9 +119,9 @@ export const WalletStepForm = () => {
           receiverAddress,
           tokenAddress,
           amount,
-          maxFeePerGas: gas?.maxFeePerGas ?? BigInt(0),
-          maxPriorityFeePerGas: gas?.maxPriorityFeePerGas ?? BigInt(0),
-          gas: gas?.gas ?? BigInt(0),
+          maxFeePerGas: gasDetails?.maxFeePerGas ?? BigInt(0),
+          maxPriorityFeePerGas: gasDetails?.maxPriorityFeePerGas ?? BigInt(0),
+          gas: gasDetails?.totalGas ?? BigInt(0),
         },
       );
 
@@ -126,30 +130,48 @@ export const WalletStepForm = () => {
         watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
       }
     },
-    [sendBundle, watchBundle, gas, tokenAddress, rescuerPrivateKey],
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      rescuerPrivateKey,
+      tokenAddress,
+      gasDetails?.maxFeePerGas,
+      gasDetails?.maxPriorityFeePerGas,
+      gasDetails?.totalGas,
+    ],
   );
 
   const calculateGas = useCallback(async () => {
-    const {
-      gas: _gas,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      gasInWei,
-    } = await estimateRescueTokenGas();
+    const publicClient = getPublicClient();
+    const sendTokenGas = await publicClient.estimateGas({
+      account: getPrivateKeyAccount(victimPrivateKey)?.address,
+      to: tokenAddress,
+      data: ERC20_INTERFACE.encodeFunctionData('transfer', [
+        receiverWalletAddress,
+        1,
+      ]) as `0x${string}`,
+    });
 
-    return {
-      gas: _gas + BigInt(21000),
+    const totalGas = sendTokenGas + BigInt(21000); // send ether gas + gas for sending claimed token to receiver
+
+    setGasDetails({
+      totalGas,
+      txGases: [BigInt(21000), sendTokenGas],
       maxFeePerGas,
       maxPriorityFeePerGas,
-      gasInWei: gasInWei + BigInt(21000) * maxFeePerGas,
-    }; // 21000 is the gas for sending the gas to victim
-  }, [estimateRescueTokenGas]);
+      gasInWei: totalGas * maxFeePerGas,
+    });
+  }, [
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    tokenAddress,
+    receiverWalletAddress,
+    victimPrivateKey,
+  ]);
 
   const onSubmit = async (formData: StepperFormValues) => {
     try {
       if (!ethBalanceEnough) return;
-
-      const calcGas = await calculateGas();
 
       setActiveStep(3);
 
@@ -161,8 +183,6 @@ export const WalletStepForm = () => {
         amount: BigInt(
           Number(formData.amountToSalvage) * 10 ** Number(decimals),
         ),
-        maxFeePerGas: calcGas?.maxFeePerGas ?? BigInt(0),
-        maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
       });
     } catch (error: any) {
       setErrorSubmitting(true);
@@ -186,7 +206,7 @@ export const WalletStepForm = () => {
       calculateGas &&
       validateTokenAddress(tokenAddress)
     ) {
-      calculateGas().then(setGas);
+      calculateGas();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStep]);

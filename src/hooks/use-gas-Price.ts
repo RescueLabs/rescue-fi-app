@@ -22,7 +22,7 @@ export const useGasPrice = () => {
     getFeeData();
   }, [provider]);
 
-  let _maxFeePerGas = (maxFeePerGas * BigInt(140)) / BigInt(100);
+  let _maxFeePerGas = (maxFeePerGas * BigInt(120)) / BigInt(100);
   const _maxPriorityFeePerGas =
     (maxPriorityFeePerGas * BigInt(120)) / BigInt(100);
   _maxFeePerGas += _maxPriorityFeePerGas - maxPriorityFeePerGas;

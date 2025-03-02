@@ -12,12 +12,14 @@ import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
-import { useEstimateClaimAirdropGas } from '@/hooks/use-estimate-claim-airdrop-gas';
-import { useEstimateRescueTokenGas } from '@/hooks/use-estimate-rescue-token-gas';
 import { useEthBalance } from '@/hooks/use-eth-balance';
+import { useGasPrice } from '@/hooks/use-gas-Price';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
+import { ERC20_INTERFACE } from '@/lib/constants';
 import {
+  getPrivateKeyAccount,
+  getPublicClient,
   roundToFiveDecimals,
   validatePrivateKey,
   validateTokenAddress,
@@ -56,6 +58,7 @@ export const AirdropStepForm = () => {
     callData,
     rescuerPrivateKey,
     receiverWalletAddress,
+    victimPrivateKey,
   ] = useWatch({
     control: methods.control,
     name: [
@@ -64,11 +67,12 @@ export const AirdropStepForm = () => {
       'callData',
       'rescuerPrivateKey',
       'receiverWalletAddress',
+      'victimPrivateKey',
     ],
   });
 
   const [calculatedGas, setCalculatedGas] = useState<{
-    gas: bigint;
+    totalGas: bigint;
     txGases: bigint[];
     maxFeePerGas: bigint;
     maxPriorityFeePerGas: bigint;
@@ -80,10 +84,8 @@ export const AirdropStepForm = () => {
     formState: { isSubmitting, isValid },
   } = methods;
 
-  const estimateRescueTokenGas = useEstimateRescueTokenGas(tokenAddress);
-  const estimateClaimAirdropGas = useEstimateClaimAirdropGas();
   const { getTokenDetails } = useTokenDetails();
-
+  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
   const {
     ethBalanceEnough,
     ethRemainingBalance,
@@ -109,37 +111,45 @@ export const AirdropStepForm = () => {
   }, []);
 
   const calculateGas = useCallback(async (): Promise<{
-    gas: bigint;
+    totalGas: bigint;
     txGases: bigint[];
     maxFeePerGas: bigint;
     maxPriorityFeePerGas: bigint;
     gasInWei: bigint;
   }> => {
-    const {
-      gas: sendTokenGas,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      // gasInWei,
-    } = await estimateRescueTokenGas();
-    const { gas: claimAirdropGas } = await estimateClaimAirdropGas({
-      airdropContractAddress,
-      methodId: callData.slice(0, 10),
+    const publicClient = getPublicClient();
+    const claimAirdropGas = await publicClient.estimateGas({
+      account: getPrivateKeyAccount(victimPrivateKey)?.address,
+      to: airdropContractAddress,
+      data: callData,
     });
 
-    const rawGas = sendTokenGas + claimAirdropGas + BigInt(21000);
+    const sendTokenGas = await publicClient.estimateGas({
+      account: getPrivateKeyAccount(victimPrivateKey)?.address,
+      to: tokenAddress,
+      data: ERC20_INTERFACE.encodeFunctionData('transfer', [
+        receiverWalletAddress,
+        0,
+      ]) as `0x${string}`,
+    });
+
+    const totalGas = sendTokenGas + claimAirdropGas + BigInt(21000); // send ether gas + claim airdrop gas + gas for sending claimed token to receiver
 
     return {
-      gas: rawGas,
+      totalGas,
       txGases: [BigInt(21000), claimAirdropGas, sendTokenGas],
       maxFeePerGas,
       maxPriorityFeePerGas,
-      gasInWei: rawGas * maxFeePerGas,
+      gasInWei: totalGas * maxFeePerGas,
     };
   }, [
-    estimateRescueTokenGas,
-    estimateClaimAirdropGas,
     airdropContractAddress,
     callData,
+    maxFeePerGas,
+    maxPriorityFeePerGas,
+    receiverWalletAddress,
+    tokenAddress,
+    victimPrivateKey,
   ]);
 
   const { sendBundle, watchBundle, success, failed, loading } =
@@ -168,7 +178,7 @@ export const AirdropStepForm = () => {
           amount: BigInt(parseUnits(formData.amountToSalvage, decimals)),
           maxFeePerGas: calcGas?.maxFeePerGas ?? BigInt(0),
           maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
-          gas: calcGas?.gas ?? BigInt(0),
+          totalGas: calcGas?.totalGas ?? BigInt(0),
         },
       );
 
@@ -203,7 +213,7 @@ export const AirdropStepForm = () => {
       calculateGas().then(setCalculatedGas);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStep]);
+  }, [activeStep, tokenAddress, airdropContractAddress]);
 
   return (
     <AnimatePresence mode="wait">
