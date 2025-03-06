@@ -153,7 +153,7 @@ export const FormRescueFundsLoading = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.5 }}
-          className="mb-4 bg-gradient-to-r from-purple-300 to-purple-600 bg-clip-text text-3xl font-bold text-transparent"
+          className="mb-4 bg-gradient-to-r from-purple-300 to-purple-500 bg-clip-text text-3xl font-bold text-transparent"
         >
           {text}
         </motion.h1>

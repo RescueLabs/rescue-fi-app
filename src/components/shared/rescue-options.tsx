@@ -71,13 +71,13 @@ export const RescueOptions: FC<RescueOptionsProps> = ({ rescueOptions }) => (
 
             <div
               className={cn(
-                '!text-xxs bg-in-slate-300 rounded-2xl border-2 border-white bg-purple-100 px-3 py-1.5 font-medium text-purple-500 dark:border-in-black-300 dark:bg-purple-800 dark:text-purple-50',
+                '!text-xxs bg-in-slate-300 rounded-2xl border-2 border-white bg-purple-100 px-3 py-1.5 font-medium text-purple-500 dark:border-in-black-300 dark:bg-in-purple dark:text-purple-50',
               )}
             >
               <p>Explore</p>
             </div>
 
-            <IconArrowRight className="text-in-gray-175 dark:text-in-slate-700 h-4 w-4 min-w-4 transition-all group-hover:translate-x-1 group-hover:text-purple-600 dark:group-hover:text-purple-200" />
+            <IconArrowRight className="text-in-gray-175 dark:text-in-slate-700 h-4 w-4 min-w-4 transition-all group-hover:translate-x-1 group-hover:text-purple-500 dark:group-hover:text-purple-200" />
           </button>
         </Link>
       ))}

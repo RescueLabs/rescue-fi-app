@@ -1,3 +1,5 @@
+import { Interface } from 'ethers';
+
 import {
   getSepoliaMevShareClient,
   getEthereumMevShareClient,
@@ -26,6 +28,10 @@ export const MEV_CLIENT =
   NETWORK === 'sepolia'
     ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL)
     : getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL);
+
+export const ERC20_INTERFACE = new Interface([
+  'function transfer(address to, uint256 value) public returns (bool)',
+]);
 
 // Test values
 export const SEPOLIA_AIRDROP_CONTRACT_ADDRESS =

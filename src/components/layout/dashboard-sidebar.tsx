@@ -38,14 +38,14 @@ const links: {
         label: 'Wallet Funds',
         href: '/rescue/wallet-funds',
         icon: (
-          <IconWallet className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-600 dark:group-hover/sidebar:text-purple-400" />
+          <IconWallet className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
         ),
       },
       {
         label: 'Airdrop Funds',
         href: '/rescue/airdrop-funds',
         icon: (
-          <IconAirBalloon className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-600 dark:group-hover/sidebar:text-purple-400" />
+          <IconAirBalloon className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
         ),
       },
     ],

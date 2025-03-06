@@ -23,8 +23,8 @@ export const StepperIndicator: FC<StepperIndicatorProps> = ({
               step > activeStep &&
                 'border-slate-800/50 bg-white text-in-black-300 dark:border-slate-200/50 dark:bg-in-black-300 dark:text-white',
               step < activeStep &&
-                'border-purple-600 bg-purple-600 !text-white dark:border-purple-400 dark:bg-purple-600',
-              step === activeStep && 'border-purple-600 dark:border-purple-400',
+                'border-purple-500 bg-purple-500 !text-white dark:border-purple-400 dark:bg-purple-500',
+              step === activeStep && 'border-purple-500 dark:border-purple-400',
             )}
           >
             {step >= activeStep ? step : <IconCheck className="h-5 w-5" />}
@@ -35,7 +35,7 @@ export const StepperIndicator: FC<StepperIndicatorProps> = ({
                 orientation="horizontal"
                 className={clsx(
                   'h-[2px] w-full origin-left bg-slate-800/50 transition-all duration-300 dark:bg-slate-200/50',
-                  step <= activeStep - 1 && 'bg-purple-600 dark:bg-purple-600',
+                  step <= activeStep - 1 && 'bg-purple-500 dark:bg-purple-500',
                 )}
               />
             </div>
