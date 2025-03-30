@@ -16,9 +16,9 @@ export const ConnectWalletButton = () => {
       method: 'wallet_addEthereumChain',
       params: [
         {
-          chainId: '0x10',
+          chainId: '0x1',
           chainName: 'Flashbots Protect',
-          rpcUrls: ['https://rpc.flashbots.net/fast'],
+          rpcUrls: ['https://rpc.flashbots.net/fast?bundle=1d43'],
           nativeCurrency: {
             name: 'Ether',
             symbol: 'ETH',
