@@ -43,7 +43,7 @@ export const useClaimAirdropBundle = () => {
       txGases,
       maxFeePerGas,
       maxPriorityFeePerGas,
-      gas,
+      totalGas,
     }: {
       victimPrivateKey: `0x${string}`;
       rescuerPrivateKey: `0x${string}`;
@@ -54,7 +54,7 @@ export const useClaimAirdropBundle = () => {
       amount: bigint;
       maxFeePerGas: bigint;
       maxPriorityFeePerGas: bigint;
-      gas: bigint;
+      totalGas: bigint;
       txGases: bigint[];
     }) => {
       const victimAccount = getPrivateKeyAccount(victimPrivateKey);
@@ -83,7 +83,7 @@ export const useClaimAirdropBundle = () => {
       // transaction to send ETH to victim wallet for gas
       const tx1 = {
         to: victimAccount.address,
-        value: (gas - BigInt(21000)) * maxFeePerGas,
+        value: (totalGas - BigInt(21000)) * maxFeePerGas,
         nonce: rescuerNonce,
         maxFeePerGas,
         maxPriorityFeePerGas,

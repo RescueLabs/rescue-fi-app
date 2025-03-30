@@ -3,7 +3,8 @@ import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
-import { AppQueryClientProvider } from '@/components/layout/query-client-provider';
+import { RainbowKitClientProvider } from '@/components/layout/rainbow-kit-provider';
+import { ConnectWalletButton } from '@/components/shared/connect-wallet-button';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 
 import type { Metadata } from 'next';
 
+import '@rainbow-me/rainbowkit/styles.css';
 import './globals.css';
 
 const onest = Onest({
@@ -58,7 +60,7 @@ const RootLayout = ({
     <head />
     <body className={cn(onest.variable)}>
       <NextTopLoader showSpinner={false} color="#a855f7" />
-      <AppQueryClientProvider>
+      <RainbowKitClientProvider>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SidebarProvider>
             <ScrollArea className="h-screen w-screen">
@@ -70,6 +72,8 @@ const RootLayout = ({
                 >
                   <DashboardSidebar />
                   <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                    <ConnectWalletButton />
+
                     {children}
 
                     <Footer />
@@ -79,7 +83,7 @@ const RootLayout = ({
             </ScrollArea>
           </SidebarProvider>
         </ThemeProvider>
-      </AppQueryClientProvider>
+      </RainbowKitClientProvider>
       <Toaster />
     </body>
   </html>

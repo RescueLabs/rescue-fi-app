@@ -108,7 +108,7 @@ export const DesktopSidebar = ({
           )}
         </Button>
 
-        {children}
+        {children as React.ReactNode}
       </>
     </motion.div>
   );
@@ -134,6 +134,7 @@ export const MobileSidebar = ({
     document.addEventListener('click', handleLinkClick);
 
     return () => document.removeEventListener('click', handleLinkClick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (

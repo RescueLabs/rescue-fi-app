@@ -17,7 +17,7 @@ const buttonVariants = cva(
           'bg-transparent text-in-gray hover:bg-slate-100 hover:text-black dark:hover:bg-in-black dark:text-gray-50 dark:hover:text-white px-[10px] py-2',
         'glowing-border':
           'px-[10px] py-2 relative text-black font-normal hover:font-medium dark:text-white',
-        link: 'text-black hover:text-purple-600 dark:text-white dark:hover:text-green-400',
+        link: 'text-black hover:text-purple-500 dark:text-white dark:hover:text-green-400',
       },
     },
     defaultVariants: {

@@ -43,6 +43,9 @@ const config = {
           '500': '#171A1C',
           DEFAULT: '#1B1F23',
         },
+        'in-purple': {
+          DEFAULT: '#7b3fe4',
+        },
       },
       keyframes: {
         'accordion-down': {

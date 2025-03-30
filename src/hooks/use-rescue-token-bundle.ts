@@ -1,10 +1,15 @@
 import { BundleParams } from '@flashbots/mev-share-client';
 import { ISendBundleResult } from '@flashbots/mev-share-client/build/api/interfaces';
 import axios from 'axios';
-import { ethers, Interface, keccak256 } from 'ethers';
+import { ethers, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 
-import { MAX_BLOCK_NUMBER, ZERO_ADDRESS, CHAIN_ID } from '@/lib/constants';
+import {
+  MAX_BLOCK_NUMBER,
+  ZERO_ADDRESS,
+  CHAIN_ID,
+  ERC20_INTERFACE,
+} from '@/lib/constants';
 
 import {
   getPrivateKeyAccount,
@@ -13,10 +18,6 @@ import {
 } from '../lib/utils';
 
 import { useWatchBundle } from './use-watch-bundle';
-
-const erc20Interface = new Interface([
-  'function transfer(address to, uint256 value) public returns (bool)',
-]);
 
 const publicClient = getPublicClient();
 
@@ -96,7 +97,7 @@ export const useRescueTokenBundle = () => {
         nonce: victimNonce,
         maxFeePerGas,
         maxPriorityFeePerGas,
-        data: erc20Interface.encodeFunctionData('transfer', [
+        data: ERC20_INTERFACE.encodeFunctionData('transfer', [
           receiverAddress,
           amount,
         ]) as `0x${string}`,

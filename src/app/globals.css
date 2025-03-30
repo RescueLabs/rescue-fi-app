@@ -18,6 +18,10 @@
   .text-xxs {
     font-size: 11px;
   }
+
+  [data-rk] button[data-testid='rk-connect-button'] {
+    @apply !rounded-[24px];
+  }
 }
 
 @media only screen and (hover: none) and (pointer: coarse) {

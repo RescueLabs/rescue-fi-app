@@ -38,7 +38,7 @@ export const Footer = () => {
             <Link
               href="https://github.com/RescueLabs/rescue-fi-app"
               target="_blank"
-              className="block hover:text-purple-600 dark:hover:text-purple-400"
+              className="block hover:text-purple-500 dark:hover:text-purple-400"
             >
               <IconBrandGithub
                 size={24}

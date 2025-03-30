@@ -14,7 +14,7 @@ export const rescueOptions: RescueOptionType[] = [
     title: 'Wallet Funds',
     description: 'Option to rescue funds from your wallet.',
     icon: (
-      <IconWallet className="size-[22px] min-w-[22px] self-start text-purple-600 dark:text-purple-200" />
+      <IconWallet className="size-[22px] min-w-[22px] self-start text-purple-500 dark:text-purple-200" />
     ),
     href: '/rescue/wallet-funds',
   },
@@ -23,7 +23,7 @@ export const rescueOptions: RescueOptionType[] = [
     title: 'Airdrop Funds',
     description: 'Option to rescue airdrop funds.',
     icon: (
-      <IconAirBalloon className="size-[22px] min-w-[22px] self-start text-purple-600 dark:text-purple-200" />
+      <IconAirBalloon className="size-[22px] min-w-[22px] self-start text-purple-500 dark:text-purple-200" />
     ),
     href: '/rescue/airdrop-funds',
   },
