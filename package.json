@@ -59,7 +59,8 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "viem": "^2.21.45",
-    "wagmi": "^2.14.12"
+    "wagmi": "^2.14.12",
+    "@radix-ui/react-dialog": "^1.1.6"
   },
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.60.1",
