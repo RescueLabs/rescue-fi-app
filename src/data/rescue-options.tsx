@@ -10,8 +10,9 @@ export interface RescueOptionType {
 
 export const rescueOptions: RescueOptionType[] = [
   {
-    id: '1',
     title: 'Wallet Funds',
+
+    id: '1',
     description: 'Option to rescue funds from your wallet.',
     icon: (
       <IconWallet className="size-[22px] min-w-[22px] self-start text-purple-500 dark:text-purple-200" />

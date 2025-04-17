@@ -18,3 +18,14 @@ export const AIRDROP_STEPPER_FORM_KEYS = {
   ],
   3: ['rescuerPrivateKey'],
 } as const;
+
+export const NEW_WALLET_STEPPER_FORM_KEYS = {
+  1: [
+    'victimWalletAddress',
+    'receiverWalletAddress',
+    'tokenSource',
+    'selectedToken',
+    'manualTokenAddress',
+  ],
+  2: ['rescuerPrivateKey'],
+} as const;
