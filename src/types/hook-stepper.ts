@@ -22,11 +22,13 @@ type GetStepperFormValueType<
     | NewWalletStepperFormKeysType,
 > = FieldName extends 'amountToSalvage'
   ? string
-  : FieldName extends 'selectedToken'
+  : FieldName extends 'manualTokenDetails'
     ? ITokenMetadata | null
-    : FieldName extends 'tokenSource'
-      ? 'detected' | 'manual'
-      : `0x${string}`;
+    : FieldName extends 'showInputManual'
+      ? boolean
+      : FieldName extends 'manualTokenAddress'
+        ? string
+        : `0x${string}`;
 
 export type StepperFormValues = {
   [FieldName in StepperFormKeysType]: GetStepperFormValueType<FieldName>;

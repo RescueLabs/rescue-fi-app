@@ -4,8 +4,9 @@ import { BundleParams } from '@flashbots/mev-share-client';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
 } from '@/lib/utils';
 import { GasDetails } from '@/types/gas';
 import { StepperFormValues } from '@/types/hook-stepper';
+import { ITokenMetadata } from '@/types/tokens';
 
 import { FormRescueFundsLoading } from './form-rescue-funds-loading';
 import { RescueWalletInfo } from './rescue-wallet-info';
@@ -42,13 +44,24 @@ const getStepContent = (step: number) => {
 };
 
 export const TestWalletStepForm = () => {
+  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
+    'selectedTokens',
+    {},
+  );
+
   const [activeStep, setActiveStep] = useState<number>(1);
+  const [gasDetails, setGasDetails] = useState<GasDetails>();
   const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
   const [erroredInputName, setErroredInputName] = useState<string>('');
 
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
+
+  const {
+    handleSubmit,
+    formState: { isSubmitting, isValid },
+  } = methods;
 
   const [
     tokenAddress,
@@ -65,16 +78,11 @@ export const TestWalletStepForm = () => {
     ],
   });
 
-  const [gasDetails, setGasDetails] = useState<GasDetails>();
-
-  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
-  const {
-    handleSubmit,
-    formState: { isSubmitting, isValid },
-  } = methods;
-
   const { getTokenDetails } = useTokenDetails();
-
+  const { simulateBundle } = useSimulateBundle();
+  const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
+  const { sendBundle, loading, success, failed, watchBundle } =
+    useRescueTokenBundle();
   const {
     ethBalanceEnough,
     ethRemainingBalance,
@@ -87,21 +95,28 @@ export const TestWalletStepForm = () => {
     },
   });
 
+  const isNextDisabled = useMemo(() => {
+    switch (activeStep) {
+      case 1:
+        return !isValid || Object.keys(selectedTokens).length === 0;
+      case 2:
+        return !isValid || !ethBalanceEnough;
+      default:
+        return false;
+    }
+  }, [activeStep, isValid, selectedTokens, ethBalanceEnough]);
+
   const handleNext = useCallback(() => {
     if (
-      (isValid && activeStep !== 2) ||
+      (isValid && activeStep === 1 && Object.keys(selectedTokens).length > 0) ||
       (isValid && activeStep === 2 && ethBalanceEnough)
     )
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  }, [isValid, activeStep, ethBalanceEnough]);
+  }, [isValid, activeStep, ethBalanceEnough, selectedTokens]);
 
   const handleBack = useCallback(() => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
-
-  const { sendBundle, loading, success, failed, watchBundle } =
-    useRescueTokenBundle();
-  const { simulateBundle } = useSimulateBundle();
 
   const sendBundleAndWatch = useCallback(
     async ({
@@ -209,10 +224,6 @@ export const TestWalletStepForm = () => {
   }, [erroredInputName]);
 
   useEffect(() => {
-    if (activeStep === 1) {
-      methods.setValue('tokenSource', 'detected' as 'detected' | 'manual');
-    }
-
     if (
       activeStep === 2 &&
       calculateGas &&
@@ -346,6 +357,7 @@ export const TestWalletStepForm = () => {
                   <Button
                     type="button"
                     className="w-[100px]"
+                    disabled={isNextDisabled}
                     onClick={handleNext}
                   >
                     Next

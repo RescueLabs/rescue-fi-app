@@ -23,9 +23,9 @@ export const NEW_WALLET_STEPPER_FORM_KEYS = {
   1: [
     'victimWalletAddress',
     'receiverWalletAddress',
-    'tokenSource',
-    'selectedToken',
+    'showInputManual',
     'manualTokenAddress',
+    'manualTokenDetails',
   ],
   2: ['rescuerPrivateKey'],
 } as const;
