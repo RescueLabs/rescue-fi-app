@@ -62,7 +62,7 @@ export const useDetectTokens = () => {
 
           const tokenMetadata: ITokenMetadata = {
             type: 'erc20',
-            info: `ERC20 - ${token.contractAddress || metadata.symbol || metadata.name}`,
+            info: `ERC20 - ${token.contractAddress || metadata.symbol || metadata.name}`?.toLowerCase(),
             symbol: metadata.symbol || '',
             amount: formatUnits(
               fromHex(token.tokenBalance || '0x00', 'bigint'),

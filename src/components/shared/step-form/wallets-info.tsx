@@ -70,6 +70,24 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
     });
   };
 
+  const addManualToken = useCallback(() => {
+    const tokenIsAlreadyAdded = detectedTokens.some(
+      (token) => token.info === manualTokenDetails.info,
+    );
+
+    if (tokenIsAlreadyAdded) {
+      setError('manualTokenAddress', {
+        message: 'Token already added',
+      });
+      return;
+    }
+
+    setDetectedTokens((prev) => [...prev, manualTokenDetails]);
+    setValue('manualTokenDetails', null);
+    setValue('manualTokenAddress', '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detectedTokens, manualTokenDetails]);
+
   const fetchDetectedTokens = useCallback(async () => {
     setSelectedTokens({});
     setValue('showInputManual', false);
@@ -148,13 +166,11 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
           label="Victim Wallet Address e.g. 0x..."
           {...register('victimWalletAddress', {
             required: 'Required',
-            maxLength: {
-              value: 42,
-              message: 'Invalid address format',
-            },
-            pattern: {
-              value: /^(0x)?[0-9a-fA-F]{40}$/,
-              message: 'Invalid address format',
+            validate: (value) => {
+              if (!isAddress(value)) {
+                return 'Invalid address format';
+              }
+              return true;
             },
           })}
           error={errors.victimWalletAddress?.message}
@@ -251,14 +267,11 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
                       id="tokenAddress"
                       label="Token Address e.g. 0x..."
                       {...register('manualTokenAddress', {
-                        required: 'Required',
-                        maxLength: {
-                          value: 42,
-                          message: 'Invalid address format',
-                        },
-                        pattern: {
-                          value: /^(0x)?[0-9a-fA-F]{40}$/,
-                          message: 'Invalid address format',
+                        validate: (value) => {
+                          if (!isAddress(value)) {
+                            return 'Invalid address format';
+                          }
+                          return true;
                         },
                       })}
                       error={errors.manualTokenAddress?.message}
@@ -281,14 +294,8 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
                               <div className="mt-2 flex w-full justify-end">
                                 <Button
                                   variant="outline"
-                                  onClick={() => {
-                                    setDetectedTokens((prev) => [
-                                      ...prev,
-                                      manualTokenDetails,
-                                    ]);
-                                    setValue('manualTokenDetails', null);
-                                    setValue('manualTokenAddress', '');
-                                  }}
+                                  type="button"
+                                  onClick={addManualToken}
                                 >
                                   Add Token
                                 </Button>
@@ -310,13 +317,11 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
           label="Receiver Wallet Address e.g. 0x..."
           {...register('receiverWalletAddress', {
             required: 'Required',
-            maxLength: {
-              value: 42,
-              message: 'Invalid address format',
-            },
-            pattern: {
-              value: /^(0x)?[0-9a-fA-F]{40}$/,
-              message: 'Invalid address format',
+            validate: (value) => {
+              if (!isAddress(value)) {
+                return 'Invalid address format';
+              }
+              return true;
             },
           })}
           error={errors.receiverWalletAddress?.message}
