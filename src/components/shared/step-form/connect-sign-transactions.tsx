@@ -1,5 +1,6 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { IconLoader2 } from '@tabler/icons-react';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
@@ -82,17 +83,20 @@ const AddCustomRPC = ({
   setStage: (stage: number) => void;
   uuid: string;
 }) => {
+  const [checkLoading, setCheckLoading] = useState<boolean>(false);
   const { addCustomNetwork, checkIfConnectedtoFlashbotRpc } =
     useContext(RpcEnforcerContext);
 
   const [_, copy] = useCopyToClipboard();
 
   const rpcUrl = useMemo(
-    () => `https://rpc.flashbots.net/fast?bundle=${uuid}`,
+    () =>
+      `https://rpc${process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? '-sepolia' : ''}.flashbots.net?bundle=${uuid}`,
     [uuid],
   );
 
   const proceed = useCallback(async () => {
+    setCheckLoading(true);
     const isConnected = await checkIfConnectedtoFlashbotRpc();
 
     if (isConnected) {
@@ -100,6 +104,8 @@ const AddCustomRPC = ({
     } else {
       toast.error('Please connect to the Flashbots Protect RPC');
     }
+
+    setCheckLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -160,7 +166,11 @@ const AddCustomRPC = ({
             onClick={proceed}
             type="button"
           >
-            I have added the RPC, Proceed
+            {checkLoading ? (
+              <IconLoader2 className="size-4 animate-spin" />
+            ) : (
+              'I have added the RPC, Proceed'
+            )}
           </Button>
         </div>
       </div>

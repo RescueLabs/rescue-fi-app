@@ -34,7 +34,7 @@ export const RpcEnforcerProvider = ({
               process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
                 ? '0xaa36a7'
                 : '0x1',
-            chainName: 'RescueFi-Flashbots Protect',
+            chainName: ACCEPTED_CHAIN.name,
             rpcUrls: [rpcUrl],
             nativeCurrency: ACCEPTED_CHAIN.nativeCurrency,
             blockExplorerUrls: [ACCEPTED_CHAIN.blockExplorers.default.url],
