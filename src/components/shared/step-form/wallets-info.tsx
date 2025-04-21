@@ -27,6 +27,15 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
   const [selectedTokens, setSelectedTokens] = useLocalStorage<
     Record<string, ITokenMetadata>
   >('selectedTokens', {});
+  const [victimWallet] = useLocalStorage<`0x${string}` | null>(
+    'victimWallet',
+    null,
+  );
+  const [receiverWallet] = useLocalStorage<`0x${string}` | null>(
+    'receiverWallet',
+    null,
+  );
+
   const [detectedTokens, setDetectedTokens] = useState<ITokenMetadata[]>([]);
   const [detectedTokensLoading, setDetectedTokensLoading] =
     useState<boolean>(false);
@@ -149,11 +158,19 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manualTokenAddress, showInputManual]);
 
+  useEffect(() => {
+    if (victimWallet && receiverWallet) {
+      setValue('victimWalletAddress', victimWallet);
+      setValue('receiverWalletAddress', receiverWallet);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [victimWallet, receiverWallet]);
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <h4 className="text-center text-lg font-semibold">
-          Wallets Information
+          Wallets & Assets Information
         </h4>
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Please enter the Wallets of the victim (hacked wallet) and the
@@ -186,7 +203,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
                   exit={{ opacity: 0, y: 10 }}
                   className="mt-2"
                 >
-                  <p className="mb-2 text-sm">Select token to rescue</p>
+                  <p className="mb-2 text-sm">Select tokens to rescue</p>
 
                   {detectedTokens.length > 0 ? (
                     <div className="group rounded-lg border border-gray-200 dark:border-gray-800">

@@ -37,7 +37,10 @@ export const flashbotsProtect = {
 export const config = getDefaultConfig({
   appName: 'RescueFi',
   projectId: process.env.WALLET_CONNECT_PROJECT_ID as string,
-  chains: [flashbotsProtect, sepolia],
+  chains:
+    process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
+      ? [sepolia]
+      : [flashbotsProtect],
   transports: {
     [flashbotsProtect.id]: http('https://rpc.flashbots.net/fast'),
     [sepolia.id]: http(),
