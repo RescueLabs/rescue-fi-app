@@ -162,7 +162,7 @@ const AddCustomRPC = ({
           </div>
 
           <Button
-            className="w-fit !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+            className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
             onClick={proceed}
             type="button"
           >

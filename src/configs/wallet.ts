@@ -7,8 +7,8 @@ export const config = getDefaultConfig({
   projectId: process.env.WALLET_CONNECT_PROJECT_ID as string,
   chains: process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? [sepolia] : [mainnet],
   transports: {
-    [mainnet.id]: http('https://rpc.flashbots.net/fast'),
-    [sepolia.id]: http(),
+    [process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? sepolia.id : mainnet.id]:
+      http(),
   },
   ssr: true,
 });
