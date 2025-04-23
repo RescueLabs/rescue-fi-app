@@ -11,6 +11,10 @@ export const RPC_URL =
   NETWORK === 'sepolia'
     ? 'https://ethereum-sepolia-rpc.publicnode.com'
     : 'https://ethereum-rpc.publicnode.com';
+export const RELAY_URL =
+  NETWORK === 'sepolia'
+    ? 'https://relay-sepolia.flashbots.net'
+    : 'https://relay.flashbots.net';
 export const AVG_SEPOLIA_BLOCK_TIME = 13;
 export const MAX_BLOCK_NUMBER = 24;
 export const SEPOLIA_CHAIN_ID = 11155111;
