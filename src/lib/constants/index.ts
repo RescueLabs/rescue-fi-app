@@ -1,4 +1,5 @@
 import { Interface } from 'ethers';
+import { sepolia, mainnet } from 'viem/chains';
 
 import {
   getSepoliaMevShareClient,
@@ -28,6 +29,7 @@ export const BASE_ETHERSCAN_URL =
     ? 'https://api-sepolia.etherscan.io'
     : 'https://api.etherscan.io';
 export const CHAIN_ID = NETWORK === 'sepolia' ? SEPOLIA_CHAIN_ID : 1;
+export const ACCEPTED_CHAIN = NETWORK === 'sepolia' ? sepolia : mainnet;
 export const MEV_CLIENT =
   NETWORK === 'sepolia'
     ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL)
