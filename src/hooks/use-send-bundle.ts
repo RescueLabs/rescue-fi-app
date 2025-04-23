@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import { ethers, JsonRpcProvider } from 'ethers';
 
-import { RPC_URL, RELAY_URL } from '@/lib/constants';
+import { RPC_URLS, RELAY_URLS, CHAIN_ID } from '@/lib/constants';
 import { getPublicClient } from '@/lib/utils';
 
 const authSigner = ethers.Wallet.createRandom();
@@ -23,7 +23,7 @@ interface SendBundleResponse {
 
 const publicClient = getPublicClient();
 export const useSendBundle = () => {
-  const provider = new JsonRpcProvider(RPC_URL);
+  const provider = new JsonRpcProvider(RPC_URLS[CHAIN_ID]);
 
   const getBundle = async (bundleId: string): Promise<string[]> => {
     try {
@@ -42,7 +42,7 @@ export const useSendBundle = () => {
     const flashbotsProvider = await FlashbotsBundleProvider.create(
       provider,
       authSigner,
-      RELAY_URL,
+      RELAY_URLS[CHAIN_ID],
     );
 
     const blockNumber = (await publicClient.getBlockNumber()) + BigInt(1);

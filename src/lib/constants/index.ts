@@ -8,14 +8,26 @@ import {
 
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK;
 
-export const RPC_URL =
-  NETWORK === 'sepolia'
-    ? 'https://ethereum-sepolia-rpc.publicnode.com'
-    : 'https://ethereum-rpc.publicnode.com';
-export const RELAY_URL =
-  NETWORK === 'sepolia'
-    ? 'https://relay-sepolia.flashbots.net'
-    : 'https://relay.flashbots.net';
+// Seplia: 11155111
+// Mainnet: 1
+export const CHAIN_IDS = {
+  mainnet: 1,
+  sepolia: 11155111,
+};
+
+export const CHAIN_ID = CHAIN_IDS[NETWORK as keyof typeof CHAIN_IDS] as
+  | 1
+  | 11155111;
+
+export const RPC_URLS = {
+  1: 'https://ethereum-rpc.publicnode.com',
+  11155111: 'https://ethereum-rpc.publicnode.com',
+};
+
+export const RELAY_URLS = {
+  1: 'https://relay.flashbots.net',
+  11155111: 'https://relay-sepolia.flashbots.net',
+};
 export const AVG_SEPOLIA_BLOCK_TIME = 13;
 export const MAX_BLOCK_NUMBER = 24;
 export const SEPOLIA_CHAIN_ID = 11155111;
@@ -24,16 +36,21 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const MEV_AUTH_SIGNER_PRIVATE_KEY = process.env
   .MEV_AUTH_SIGNER_PRIVATE_KEY as `0x${string}`;
 
-export const BASE_ETHERSCAN_URL =
-  NETWORK === 'sepolia'
-    ? 'https://api-sepolia.etherscan.io'
-    : 'https://api.etherscan.io';
-export const CHAIN_ID = NETWORK === 'sepolia' ? SEPOLIA_CHAIN_ID : 1;
-export const ACCEPTED_CHAIN = NETWORK === 'sepolia' ? sepolia : mainnet;
-export const MEV_CLIENT =
-  NETWORK === 'sepolia'
-    ? getSepoliaMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL)
-    : getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URL);
+export const ETHERSCAN_URLS = {
+  1: 'https://api.etherscan.io',
+  11155111: 'https://api-sepolia.etherscan.io',
+};
+export const ACCEPTED_CHAIN = {
+  1: mainnet,
+  11155111: sepolia,
+};
+export const MEV_CLIENT = {
+  1: getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URLS[1]),
+  11155111: getSepoliaMevShareClient(
+    MEV_AUTH_SIGNER_PRIVATE_KEY,
+    RPC_URLS[11155111],
+  ),
+};
 
 export const ERC20_INTERFACE = new Interface([
   'function transfer(address to, uint256 value) public returns (bool)',

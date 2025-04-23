@@ -2,15 +2,7 @@ import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 
 import { ERC20_INTERFACE } from '@/lib/constants';
 import { getPublicClient } from '@/lib/utils';
-
-type Tx = {
-  to: `0x${string}`;
-  data: `0x${string}`;
-  value: bigint;
-  maxFeePerGas: bigint;
-  maxPriorityFeePerGas: bigint;
-  gas: bigint;
-};
+import { Tx } from '@/types/transaction';
 
 export const useCreateRescueWalletTxs = () => {
   const publicClient = getPublicClient();
