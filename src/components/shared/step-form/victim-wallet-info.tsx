@@ -6,7 +6,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-input';
-import { RPC_URL } from '@/lib/constants';
+import { RPC_URLS, CHAIN_ID } from '@/lib/constants';
 import ERC20_ABI from '@/lib/constants/abis/erc20.json';
 import {
   getWalletAddressFromPrivateKey,
@@ -36,7 +36,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
     name: 'tokenAddress',
   });
 
-  const provider = useMemo(() => new JsonRpcProvider(RPC_URL), []);
+  const provider = useMemo(() => new JsonRpcProvider(RPC_URLS[CHAIN_ID]), []);
 
   const victimWalletAddress = useMemo(() => {
     if (
