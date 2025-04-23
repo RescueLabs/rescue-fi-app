@@ -5,7 +5,6 @@ import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { v4 as uuidv4 } from 'uuid';
-import { mainnet, sepolia } from 'viem/chains';
 import { useAccount } from 'wagmi';
 
 import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
@@ -145,9 +144,7 @@ const AddCustomRPC = ({
 
             <p className="text-lg font-medium">Chain ID:</p>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
-                ? sepolia.id
-                : mainnet.id}
+              {CHAIN_ID}
             </span>
 
             <p className="text-lg font-medium">RPC URL:</p>
