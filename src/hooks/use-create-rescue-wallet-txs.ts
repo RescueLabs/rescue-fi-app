@@ -21,7 +21,7 @@ export const useCreateRescueWalletTxs = () => {
       token: `0x${string}`;
       amount: bigint;
     }[],
-  ): Promise<Tx[]> {
+  ): Promise<{ funder: Tx; victim: Tx[] }> {
     const txs = erc20Transfers.map(({ token, amount }) => ({
       to: token,
       data: ERC20_INTERFACE.encodeFunctionData('transfer', [
@@ -61,7 +61,7 @@ export const useCreateRescueWalletTxs = () => {
       value: index === 0 ? totalGasPrice : BigInt(0),
     }));
 
-    return _txs;
+    return { funder: _txs[0], victim: _txs.slice(1) };
   }
 
   return { createTxs };
