@@ -73,3 +73,11 @@ export const ETHEREUM_TOKEN_ADDRESS = '';
 export const SEPOLIA_RECEIVER_ADDRESS =
   '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E';
 export const ETHEREUM_RECEIVER_ADDRESS = '';
+
+export const STORAGE_KEYS = {
+  victimAddress: 'rescuefi-victimAddress',
+  receiverAddress: 'rescuefi-receiverAddress',
+  funderAddress: 'rescuefi-funderAddress',
+  selectedTokens: 'rescuefi-selectedTokens',
+  bundleId: 'rescuefi-bundleId',
+};

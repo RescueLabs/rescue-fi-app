@@ -2,6 +2,7 @@ import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { IconLoader2 } from '@tabler/icons-react';
 import React, {
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -17,39 +18,39 @@ import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
 import { Button } from '@/components/ui/button';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
-import { CHAIN_ID } from '@/lib/constants';
+import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
 import { ITokenMetadata } from '@/types/tokens';
 import { Tx, Txs } from '@/types/transaction';
 
-const ConnectFunderWallet = ({
-  setFunderWallet,
-  setStage,
+const ConnectWallet = ({
+  titleMessage,
+  goToNextStage,
+  isValidAddress,
+  descriptionMessage,
+  validAddressMessage,
+  setAddressOnLocalStorage,
 }: {
-  setFunderWallet: (wallet: `0x${string}` | null) => void;
-  setStage: (stage: number) => void;
+  titleMessage: string;
+  goToNextStage: () => void;
+  descriptionMessage: ReactNode;
+  validAddressMessage: string;
+  isValidAddress: (address?: `0x${string}`) => boolean;
+  setAddressOnLocalStorage: (wallet: `0x${string}` | null) => void;
 }) => {
   const { address, isConnected, chainId } = useAccount();
-  const [victimWallet] = useLocalStorage<`0x${string}` | null>(
-    'victimWallet',
-    null,
-  );
 
   return (
     <>
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="flex justify-center gap-2">
           <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
-            Please connect a [safe] wallet to send funds.
+            {titleMessage}
             <br />
           </span>
         </p>
         <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
           <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
-          <span>
-            This wallet can be any wallet{' '}
-            <span className="font-bold">but the victim or hacked wallet</span> .
-            It would be used to send ETH to the victim wallet for gas fees.
-          </span>
+          {descriptionMessage}
         </p>
       </div>
 
@@ -60,12 +61,12 @@ const ConnectFunderWallet = ({
           showBalance={false}
         />
 
-        {isConnected && address !== victimWallet && CHAIN_ID === chainId && (
+        {isConnected && isValidAddress(address) && CHAIN_ID === chainId && (
           <Button
             className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
             onClick={() => {
-              setFunderWallet(address!);
-              setStage(2);
+              setAddressOnLocalStorage(address!);
+              goToNextStage();
             }}
             type="button"
           >
@@ -73,10 +74,9 @@ const ConnectFunderWallet = ({
           </Button>
         )}
 
-        {isConnected && address === victimWallet && (
+        {isConnected && !isValidAddress(address) && (
           <p className="w-fit text-sm text-red-500 hover:text-red-600 dark:text-red-600 dark:hover:text-red-700">
-            You are connected to the victim wallet, please connect to a
-            different wallet
+            {validAddressMessage}
           </p>
         )}
       </div>
@@ -94,19 +94,19 @@ const AddCustomRPC = ({
   setTransactions: (transactions: Txs) => void;
 }) => {
   const [_bundleId, setBundleId] = useLocalStorage<string | null>(
-    `bundleId`,
+    STORAGE_KEYS.bundleId,
     null,
   );
-  // const [victimAddress] = useLocalStorage<`0x${string}` | null>(
-  //   'victimAddress',
-  //   null,
-  // );
+  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimAddress,
+    null,
+  );
   const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
-    'receiverAddress',
+    STORAGE_KEYS.receiverAddress,
     null,
   );
   const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
-    'selectedTokens',
+    STORAGE_KEYS.selectedTokens,
     {},
   );
   const [checkLoading, setCheckLoading] = useState<boolean>(false);
@@ -129,7 +129,6 @@ const AddCustomRPC = ({
 
     if (isConnected) {
       setBundleId(uuid);
-
       const tokens = Object.values(selectedTokens).map((token) => ({
         token: token.address,
         amount: BigInt(token.amountBigInt),
@@ -142,12 +141,12 @@ const AddCustomRPC = ({
       }
 
       try {
-        const txs = await createTxs(receiverAddress!, tokens);
+        const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
         setTransactions(txs);
         setStage(3);
       } catch (error) {
         toast.error('Error creating transactions');
-        console.error(error);
+        console.error(error, 'error creating transactions');
       } finally {
         setCheckLoading(false);
       }
@@ -236,19 +235,20 @@ const SignFunderTransaction = ({
   const { sendTransactionAsync } = useSendTransaction({
     mutation: {
       onSuccess: () => {
-        toast.success('Transaction sent successfully');
         setStage(4);
       },
       onError: () => {
-        toast.error('Transaction failed');
+        toast.error(
+          'Transaction failed, Try again. If the problem persists, please refresh the page.',
+        );
+        setStage(1);
       },
     },
   });
 
-  console.log(transaction, 'transaction');
-
   useEffect(() => {
     sendTransactionAsync(transaction);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -298,8 +298,12 @@ export const ConnectSignTransactions = () => {
 
   const [stage, setStage] = useState<number>(1);
   const [transactions, setTransactions] = useState<Txs | null>(null);
-  const [_, setFunderWallet] = useLocalStorage<`0x${string}` | null>(
-    'funderWallet',
+  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimAddress,
+    null,
+  );
+  const [_, setFunderAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.funderAddress,
     null,
   );
 
@@ -307,9 +311,25 @@ export const ConnectSignTransactions = () => {
     switch (stage) {
       case 1:
         return (
-          <ConnectFunderWallet
-            setFunderWallet={setFunderWallet}
-            setStage={setStage}
+          <ConnectWallet
+            goToNextStage={() => setStage(2)}
+            isValidAddress={(address?: `0x${string}`) =>
+              address?.toLowerCase() !== victimAddress?.toLowerCase()
+            }
+            setAddressOnLocalStorage={setFunderAddress}
+            titleMessage="Please connect a [safe] wallet to send funds."
+            descriptionMessage={
+              <span>
+                This wallet can be any wallet{' '}
+                <span className="font-bold">
+                  but the victim or hacked wallet
+                </span>{' '}
+                . It would be used to send ETH to the victim wallet for gas
+                fees.
+              </span>
+            }
+            validAddressMessage="You are connected to the victim wallet, please connect to a
+            different wallet"
           />
         );
       case 2:
@@ -325,6 +345,25 @@ export const ConnectSignTransactions = () => {
           <SignFunderTransaction
             setStage={setStage}
             transaction={transactions?.funder!}
+          />
+        );
+      case 4:
+        return (
+          <ConnectWallet
+            goToNextStage={() => setStage(5)}
+            isValidAddress={(address?: `0x${string}`) =>
+              address?.toLowerCase() === victimAddress?.toLowerCase()
+            }
+            setAddressOnLocalStorage={setFunderAddress}
+            titleMessage="Please connect Victim wallet to sign transactions."
+            descriptionMessage={
+              <span>
+                You would now need to connect the{' '}
+                <span className="font-bold">victim wallet</span> to sign the
+                remaining set of transactions.
+              </span>
+            }
+            validAddressMessage="You are not connected to the victim wallet, please connect to the victim wallet"
           />
         );
       default:

@@ -8,6 +8,7 @@ import { useLocalStorage } from 'usehooks-ts';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { STORAGE_KEYS } from '@/lib/constants';
 import { StepperFormValues } from '@/types/hook-stepper';
 import { ITokenMetadata } from '@/types/tokens';
 
@@ -27,15 +28,15 @@ const getStepContent = (step: number) => {
 
 export const TestWalletStepForm = () => {
   const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
-    'selectedTokens',
+    STORAGE_KEYS.selectedTokens,
     {},
   );
   const [_v, setVictimAddress] = useLocalStorage<`0x${string}` | null>(
-    'victimAddress',
+    STORAGE_KEYS.victimAddress,
     null,
   );
   const [_r, setReceiverAddress] = useLocalStorage<`0x${string}` | null>(
-    'receiverAddress',
+    STORAGE_KEYS.receiverAddress,
     null,
   );
 

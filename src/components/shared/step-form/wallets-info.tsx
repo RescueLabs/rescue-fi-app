@@ -14,6 +14,7 @@ import { FloatingLabelInput } from '@/components/ui/floating-input';
 import { Input } from '@/components/ui/input';
 import { useDetectTokens } from '@/hooks/use-detect-tokens';
 import { useTokenDetails } from '@/hooks/use-token-details';
+import { STORAGE_KEYS } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 import { ITokenMetadata } from '@/types/tokens';
@@ -26,13 +27,13 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
 
   const [selectedTokens, setSelectedTokens] = useLocalStorage<
     Record<string, ITokenMetadata>
-  >('selectedTokens', {});
+  >(STORAGE_KEYS.selectedTokens, {});
   const [victimAddress] = useLocalStorage<`0x${string}` | null>(
-    'victimAddress',
+    STORAGE_KEYS.victimAddress,
     null,
   );
   const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
-    'receiverAddress',
+    STORAGE_KEYS.receiverAddress,
     null,
   );
 
