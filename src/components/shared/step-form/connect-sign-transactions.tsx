@@ -1,22 +1,31 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { IconLoader2 } from '@tabler/icons-react';
-import React, { useCallback, useContext, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { v4 as uuidv4 } from 'uuid';
-import { useAccount } from 'wagmi';
+import { useAccount, useSendTransaction } from 'wagmi';
 
 import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
 import { Button } from '@/components/ui/button';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
+import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
 import { CHAIN_ID } from '@/lib/constants';
+import { ITokenMetadata } from '@/types/tokens';
+import { Tx, Txs } from '@/types/transaction';
 
-const ConnectSenderWallet = ({
-  setSenderWallet,
+const ConnectFunderWallet = ({
+  setFunderWallet,
   setStage,
 }: {
-  setSenderWallet: (wallet: `0x${string}` | null) => void;
+  setFunderWallet: (wallet: `0x${string}` | null) => void;
   setStage: (stage: number) => void;
 }) => {
   const { address, isConnected, chainId } = useAccount();
@@ -29,13 +38,13 @@ const ConnectSenderWallet = ({
     <>
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="flex justify-center gap-2">
-          <span className="text-xl font-medium text-yellow-700 dark:text-yellow-400">
+          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
             Please connect a [safe] wallet to send funds.
             <br />
           </span>
         </p>
         <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="-mt-0.5 size-6" />
+          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
           <span>
             This wallet can be any wallet{' '}
             <span className="font-bold">but the victim or hacked wallet</span> .
@@ -55,7 +64,7 @@ const ConnectSenderWallet = ({
           <Button
             className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
             onClick={() => {
-              setSenderWallet(address!);
+              setFunderWallet(address!);
               setStage(2);
             }}
             type="button"
@@ -76,17 +85,37 @@ const ConnectSenderWallet = ({
 };
 
 const AddCustomRPC = ({
-  setStage,
   uuid,
+  setStage,
+  setTransactions,
 }: {
-  setStage: (stage: number) => void;
   uuid: string;
+  setStage: (stage: number) => void;
+  setTransactions: (transactions: Txs) => void;
 }) => {
+  const [_bundleId, setBundleId] = useLocalStorage<string | null>(
+    `bundleId`,
+    null,
+  );
+  // const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+  //   'victimAddress',
+  //   null,
+  // );
+  const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
+    'receiverAddress',
+    null,
+  );
+  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
+    'selectedTokens',
+    {},
+  );
   const [checkLoading, setCheckLoading] = useState<boolean>(false);
+
   const { addCustomNetwork, checkIfConnectedtoFlashbotRpc } =
     useContext(RpcEnforcerContext);
 
   const [_, copy] = useCopyToClipboard();
+  const { createTxs } = useCreateRescueWalletTxs();
 
   const rpcUrl = useMemo(
     () =>
@@ -99,7 +128,29 @@ const AddCustomRPC = ({
     const isConnected = await checkIfConnectedtoFlashbotRpc();
 
     if (isConnected) {
-      setStage(3);
+      setBundleId(uuid);
+
+      const tokens = Object.values(selectedTokens).map((token) => ({
+        token: token.address,
+        amount: BigInt(token.amountBigInt),
+      }));
+
+      if (tokens.length === 0) {
+        toast.error('No tokens selected to rescue');
+        setCheckLoading(false);
+        return;
+      }
+
+      try {
+        const txs = await createTxs(receiverAddress!, tokens);
+        setTransactions(txs);
+        setStage(3);
+      } catch (error) {
+        toast.error('Error creating transactions');
+        console.error(error);
+      } finally {
+        setCheckLoading(false);
+      }
     } else {
       toast.error('Please connect to the Flashbots Protect RPC');
     }
@@ -112,7 +163,7 @@ const AddCustomRPC = ({
     <>
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="flex justify-center gap-2">
-          <span className="text-xl font-medium text-yellow-700 dark:text-yellow-400">
+          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
             Add Flashbots Protect RPC.
             <br />
           </span>
@@ -130,7 +181,7 @@ const AddCustomRPC = ({
 
         <div className="space-y-3 text-center text-white">
           <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
-            <InfoCircledIcon className="-mt-0.5 size-6" />
+            <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
             <span>
               If adding automatically does not work, please add the following
               RPC manually to your wallet:
@@ -175,12 +226,80 @@ const AddCustomRPC = ({
   );
 };
 
+const SignFunderTransaction = ({
+  setStage,
+  transaction,
+}: {
+  transaction: Tx;
+  setStage: (stage: number) => void;
+}) => {
+  const { sendTransactionAsync } = useSendTransaction({
+    mutation: {
+      onSuccess: () => {
+        toast.success('Transaction sent successfully');
+        setStage(4);
+      },
+      onError: () => {
+        toast.error('Transaction failed');
+      },
+    },
+  });
+
+  console.log(transaction, 'transaction');
+
+  useEffect(() => {
+    sendTransactionAsync(transaction);
+  }, []);
+
+  return (
+    <>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="flex justify-center gap-2">
+          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
+            Please sign the funder transaction.
+            <br />
+          </span>
+        </p>
+        <p className="flex justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:-mr-6 sm:!block" />
+          <span>
+            Great! You have added the Flashbots Protect RPC. Now you need to
+            sign the transaction to send ETH to the victim wallet.
+          </span>
+        </p>
+      </div>
+
+      <div className="mt-8 flex flex-col items-center justify-center gap-4">
+        <div className="relative size-32 p-4">
+          <div className="absolute inset-0 animate-ping rounded-full bg-purple-500/20" />
+          <div className="absolute inset-0 animate-pulse rounded-full bg-purple-500/10" />
+          <svg
+            className="relative size-full animate-pulse text-purple-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+            />
+          </svg>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export const ConnectSignTransactions = () => {
   const uuid = uuidv4();
 
   const [stage, setStage] = useState<number>(1);
-  const [_, setSenderWallet] = useLocalStorage<`0x${string}` | null>(
-    'senderWallet',
+  const [transactions, setTransactions] = useState<Txs | null>(null);
+  const [_, setFunderWallet] = useLocalStorage<`0x${string}` | null>(
+    'funderWallet',
     null,
   );
 
@@ -188,13 +307,26 @@ export const ConnectSignTransactions = () => {
     switch (stage) {
       case 1:
         return (
-          <ConnectSenderWallet
-            setSenderWallet={setSenderWallet}
+          <ConnectFunderWallet
+            setFunderWallet={setFunderWallet}
             setStage={setStage}
           />
         );
       case 2:
-        return <AddCustomRPC setStage={setStage} uuid={uuid} />;
+        return (
+          <AddCustomRPC
+            uuid={uuid}
+            setStage={setStage}
+            setTransactions={setTransactions}
+          />
+        );
+      case 3:
+        return (
+          <SignFunderTransaction
+            setStage={setStage}
+            transaction={transactions?.funder!}
+          />
+        );
       default:
         return 'Unknown stage';
     }
@@ -203,7 +335,7 @@ export const ConnectSignTransactions = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <h4 className="text-center text-lg font-semibold">
+      <h4 className="text-center text-xl font-semibold sm:text-2xl">
         Connect Wallets & Sign Transactions
       </h4>
       {stageContent}

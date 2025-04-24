@@ -5,13 +5,13 @@ import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { encodeFunctionData, formatUnits, isAddress } from 'viem';
 
-import { RPC_URL } from '@/lib/constants';
+import { CHAIN_ID, RPC_URLS } from '@/lib/constants';
 import ERC20_ABI from '@/lib/constants/abis/erc20.json';
 import { ITokenMetadata } from '@/types/tokens';
 
 export const useTokenDetails = () => {
   const provider = useMemo(() => {
-    return new JsonRpcProvider(RPC_URL);
+    return new JsonRpcProvider(RPC_URLS[CHAIN_ID]);
   }, []);
 
   const [_, setDetectedAssets] = useLocalStorage<{
@@ -59,9 +59,11 @@ export const useTokenDetails = () => {
 
         const tokenMetadata: ITokenMetadata = {
           type: 'erc20',
+          address: tokenAddress as `0x${string}`,
           info: `ERC20 - ${tokenAddress || metadata.symbol || metadata.name}`?.toLowerCase(),
           symbol: metadata.symbol || '',
           amount: formatUnits(tokenBalance || '0', metadata.decimals || 18),
+          amountBigInt: (tokenBalance || BigInt(0)).toString(),
           decimals: metadata.decimals || 18,
           toEstimate: {
             from: victimWalletAddress as `0x${string}`,

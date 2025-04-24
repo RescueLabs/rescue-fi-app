@@ -6,3 +6,7 @@ export interface Tx {
   maxPriorityFeePerGas: bigint;
   gas: bigint;
 }
+export interface Txs {
+  funder: Tx;
+  victim: Tx[];
+}

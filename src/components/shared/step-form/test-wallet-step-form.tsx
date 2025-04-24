@@ -30,12 +30,12 @@ export const TestWalletStepForm = () => {
     'selectedTokens',
     {},
   );
-  const [_v, setVictimWallet] = useLocalStorage<`0x${string}` | null>(
-    'victimWallet',
+  const [_v, setVictimAddress] = useLocalStorage<`0x${string}` | null>(
+    'victimAddress',
     null,
   );
-  const [_r, setRecipientWallet] = useLocalStorage<`0x${string}` | null>(
-    'receiverWallet',
+  const [_r, setReceiverAddress] = useLocalStorage<`0x${string}` | null>(
+    'receiverAddress',
     null,
   );
 
@@ -74,8 +74,8 @@ export const TestWalletStepForm = () => {
       (isValid && activeStep === 2)
     ) {
       if (activeStep === 1) {
-        setVictimWallet(victimWalletAddress);
-        setRecipientWallet(receiverWalletAddress);
+        setVictimAddress(victimWalletAddress);
+        setReceiverAddress(receiverWalletAddress);
       }
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
     }
@@ -134,7 +134,7 @@ export const TestWalletStepForm = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1, delayChildren: 0.5 }}
-              className="flex h-full w-full max-w-[600px] flex-col px-4 py-4 md:py-6"
+              className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
             >
               {getStepContent(activeStep)}
             </Card>

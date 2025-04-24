@@ -2,7 +2,7 @@ import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 
 import { ERC20_INTERFACE } from '@/lib/constants';
 import { getPublicClient } from '@/lib/utils';
-import { Tx } from '@/types/transaction';
+import { Txs } from '@/types/transaction';
 
 export const useCreateRescueWalletTxs = () => {
   const publicClient = getPublicClient();
@@ -13,7 +13,7 @@ export const useCreateRescueWalletTxs = () => {
       token: `0x${string}`;
       amount: bigint;
     }[],
-  ): Promise<{ funder: Tx; victim: Tx[] }> {
+  ): Promise<Txs> {
     const txs = erc20Transfers.map(({ token, amount }) => ({
       to: token,
       data: ERC20_INTERFACE.encodeFunctionData('transfer', [

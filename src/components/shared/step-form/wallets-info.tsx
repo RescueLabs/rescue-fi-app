@@ -27,12 +27,12 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
   const [selectedTokens, setSelectedTokens] = useLocalStorage<
     Record<string, ITokenMetadata>
   >('selectedTokens', {});
-  const [victimWallet] = useLocalStorage<`0x${string}` | null>(
-    'victimWallet',
+  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+    'victimAddress',
     null,
   );
-  const [receiverWallet] = useLocalStorage<`0x${string}` | null>(
-    'receiverWallet',
+  const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
+    'receiverAddress',
     null,
   );
 
@@ -159,12 +159,12 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
   }, [manualTokenAddress, showInputManual]);
 
   useEffect(() => {
-    if (victimWallet && receiverWallet) {
-      setValue('victimWalletAddress', victimWallet);
-      setValue('receiverWalletAddress', receiverWallet);
+    if (victimAddress && receiverAddress) {
+      setValue('victimWalletAddress', victimAddress);
+      setValue('receiverWalletAddress', receiverAddress);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [victimWallet, receiverWallet]);
+  }, [victimAddress, receiverAddress]);
 
   return (
     <div className="flex flex-col gap-8">

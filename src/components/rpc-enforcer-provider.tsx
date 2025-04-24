@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
 import { useConnectedToFlashbotRpc } from '@/hooks/use-connected-to-flashbot-rpc';
-import { ACCEPTED_CHAIN } from '@/lib/constants';
+import { ACCEPTED_CHAIN, CHAIN_ID } from '@/lib/constants';
 
 export const RpcEnforcerContext = createContext<{
   checkIfConnectedtoFlashbotRpc: () => Promise<boolean>;
@@ -34,10 +34,12 @@ export const RpcEnforcerProvider = ({
               process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
                 ? '0xaa36a7'
                 : '0x1',
-            chainName: ACCEPTED_CHAIN.name,
+            chainName: ACCEPTED_CHAIN[CHAIN_ID].name,
             rpcUrls: [rpcUrl],
-            nativeCurrency: ACCEPTED_CHAIN.nativeCurrency,
-            blockExplorerUrls: [ACCEPTED_CHAIN.blockExplorers.default.url],
+            nativeCurrency: ACCEPTED_CHAIN[CHAIN_ID].nativeCurrency,
+            blockExplorerUrls: [
+              ACCEPTED_CHAIN[CHAIN_ID].blockExplorers.default.url,
+            ],
           },
         ],
       });

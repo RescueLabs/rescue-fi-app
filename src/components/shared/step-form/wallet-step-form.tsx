@@ -175,13 +175,14 @@ export const WalletStepForm = () => {
 
       setActiveStep(3);
 
-      const { decimals } = await getTokenDetails(tokenAddress);
+      const tokenDetails = await getTokenDetails(tokenAddress, '0x');
+      const decimals = tokenDetails?.decimals;
 
       sendBundleAndWatch({
         victimPrivateKey: formData.victimPrivateKey,
         receiverAddress: formData.receiverWalletAddress,
         amount: BigInt(
-          Number(formData.amountToSalvage) * 10 ** Number(decimals),
+          Number(formData.amountToSalvage) * 10 ** Number(decimals ?? 18),
         ),
       });
     } catch (error: any) {
