@@ -21,7 +21,12 @@ export const CHAIN_ID = CHAIN_IDS[NETWORK as keyof typeof CHAIN_IDS] as
 
 export const RPC_URLS = {
   1: 'https://ethereum-rpc.publicnode.com',
-  11155111: 'https://ethereum-rpc.publicnode.com',
+  11155111: 'https://ethereum-sepolia-rpc.publicnode.com',
+};
+
+export const FLASHBOTS_RPC_URLS = {
+  1: 'https://rpc.flashbots.net/fast',
+  11155111: 'https://rpc-sepolia.flashbots.net/',
 };
 
 export const RELAY_URLS = {
