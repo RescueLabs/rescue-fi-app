@@ -8,7 +8,8 @@ export const useCreateRescueWalletTxs = () => {
   const publicClient = getPublicClient();
 
   async function createTxs(
-    receiver: `0x${string}`,
+    victimWalletAddress: `0x${string}`,
+    receiverWalletAddress: `0x${string}`,
     erc20Transfers: {
       token: `0x${string}`;
       amount: bigint;
@@ -17,7 +18,7 @@ export const useCreateRescueWalletTxs = () => {
     const txs = erc20Transfers.map(({ token, amount }) => ({
       to: token,
       data: ERC20_INTERFACE.encodeFunctionData('transfer', [
-        receiver,
+        receiverWalletAddress,
         amount,
       ]) as `0x${string}`,
       value: BigInt(0),
@@ -26,6 +27,7 @@ export const useCreateRescueWalletTxs = () => {
     const gases = await Promise.all(
       txs.map(async ({ to, data, value }) => {
         const gas = await publicClient.estimateGas({
+          account: victimWalletAddress,
           to,
           data,
           value,
@@ -34,13 +36,13 @@ export const useCreateRescueWalletTxs = () => {
       }),
     );
 
-    const totalGas = gases.reduce((acc, gas) => acc + gas, BigInt(0));
+    const totalGas = gases.reduce((acc, gas) => acc + gas, BigInt(21000));
     const block = await publicClient.getBlock();
     const maxBaseFee = FlashbotsBundleProvider.getMaxBaseFeeInFutureBlock(
       BigInt(block.baseFeePerGas ?? 0),
       3,
     );
-    gases.unshift(BigInt(21000));
+
     const priorityFee = BigInt(3) * BigInt(1e9);
     const maxFeePerGas = maxBaseFee + priorityFee;
     const totalGasPrice = totalGas * maxFeePerGas;
@@ -53,7 +55,17 @@ export const useCreateRescueWalletTxs = () => {
       value: index === 0 ? totalGasPrice : BigInt(0),
     }));
 
-    return { funder: _txs[0], victim: _txs.slice(1) };
+    return {
+      funder: {
+        to: victimWalletAddress,
+        value: BigInt(0),
+        data: '0x' as `0x${string}`,
+        maxFeePerGas,
+        gas: BigInt(21000),
+        maxPriorityFeePerGas: priorityFee,
+      },
+      victim: _txs,
+    };
   }
 
   return { createTxs };
