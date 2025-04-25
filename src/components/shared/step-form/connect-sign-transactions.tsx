@@ -6,7 +6,6 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -21,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { useStageContext } from '@/context/stage-context';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
+import { useEffectOnce } from '@/hooks/use-effect-once';
 import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
 import { ITokenMetadata } from '@/types/tokens';
 import { Tx, Txs } from '@/types/transaction';
@@ -153,6 +153,7 @@ const AddCustomRPC = ({
 
       try {
         const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
+        console.log('txs', txs);
         setTransactions(txs);
         setStage(3);
       } catch (error) {
@@ -265,10 +266,9 @@ const SignFunderTransaction = ({
     },
   });
 
-  useEffect(() => {
+  useEffectOnce(() => {
     sendTransactionAsync(transaction);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   return (
     <>
@@ -320,7 +320,12 @@ const SignVictimTransactions = ({
 
   const handleSignTransactions = useCallback(async () => {
     try {
-      await Promise.all(transactions.map((tx) => sendTransactionAsync(tx)));
+      await Promise.all(
+        transactions.map(async (tx) => {
+          await sendTransactionAsync(tx);
+        }),
+      );
+      console.log('hello, reached here after two transactions');
       setNextStep(3);
     } catch (error) {
       toast.error(
@@ -331,10 +336,9 @@ const SignVictimTransactions = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, bundleId]);
 
-  useEffect(() => {
+  useEffectOnce(() => {
     handleSignTransactions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   return (
     <>

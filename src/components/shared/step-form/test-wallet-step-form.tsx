@@ -74,7 +74,7 @@ export const TestWalletStepForm = () => {
       (isValid && activeStep === 1 && Object.keys(selectedTokens).length > 0) ||
       (isValid && activeStep === 2)
     ) {
-      if (activeStep === 1) {
+      if (activeStep === 1 && victimWalletAddress && receiverWalletAddress) {
         setVictimAddress(victimWalletAddress);
         setReceiverAddress(receiverWalletAddress);
       }
