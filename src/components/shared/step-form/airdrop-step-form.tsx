@@ -164,7 +164,15 @@ export const AirdropStepForm = () => {
 
       const calcGas = await calculateGas();
 
-      const { decimals } = await getTokenDetails(tokenAddress);
+      const tokenDetails = await getTokenDetails(
+        tokenAddress,
+        formData.victimWalletAddress,
+        formData.receiverWalletAddress,
+      );
+
+      if (!tokenDetails) return;
+
+      const { decimals } = tokenDetails;
 
       const { bundleHash, txHashes, bundle, maxBlockNumber } = await sendBundle(
         {

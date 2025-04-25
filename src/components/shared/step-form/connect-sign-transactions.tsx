@@ -283,11 +283,9 @@ const SignFunderTransaction = ({
           </span>
         </motion.p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
-          <span>
-            Great! You have added the Flashbots Protect RPC. Now you need to
-            sign the transaction to send ETH to the victim wallet.
-          </span>
+          <InfoCircledIcon className="hidden size-4 min-w-4 sm:!block" />
+          Great! You have added the Flashbots Protect RPC. Now you need to sign
+          the transaction to send ETH to the victim wallet.
         </p>
       </div>
 
@@ -352,7 +350,7 @@ const SignVictimTransactions = ({
           </span>
         </motion.p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
+          <InfoCircledIcon className="hidden size-4 min-w-4 sm:!block" />
           <span>
             Great! You have connected the victim wallet. Now you need to sign
             the following transactions.
