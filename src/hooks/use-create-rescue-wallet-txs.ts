@@ -52,13 +52,13 @@ export const useCreateRescueWalletTxs = () => {
       maxFeePerGas,
       gas,
       maxPriorityFeePerGas: priorityFee,
-      value: index === 0 ? totalGasPrice : BigInt(0),
+      value: BigInt(0),
     }));
 
     return {
       funder: {
         to: victimWalletAddress,
-        value: BigInt(0),
+        value: totalGasPrice,
         data: '0x' as `0x${string}`,
         maxFeePerGas,
         gas: BigInt(21000),
