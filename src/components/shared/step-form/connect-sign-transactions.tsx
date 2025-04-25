@@ -153,7 +153,6 @@ const AddCustomRPC = ({
 
       try {
         const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
-        console.log('txs', txs);
         setTransactions(txs);
         setStage(3);
       } catch (error) {
@@ -325,7 +324,6 @@ const SignVictimTransactions = ({
           await sendTransactionAsync(tx);
         }),
       );
-      console.log('hello, reached here after two transactions');
       setNextStep(3);
     } catch (error) {
       toast.error(
