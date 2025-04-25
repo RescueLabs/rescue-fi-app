@@ -8,11 +8,13 @@ import { useLocalStorage } from 'usehooks-ts';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { StageContext } from '@/context/stage-context';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { StepperFormValues } from '@/types/hook-stepper';
 import { ITokenMetadata } from '@/types/tokens';
 
 import { ConnectSignTransactions } from './connect-sign-transactions';
+import { SendFinalBundle } from './send-final-bundle';
 import { WalletsInfo } from './wallets-info';
 
 const getStepContent = (step: number) => {
@@ -21,6 +23,8 @@ const getStepContent = (step: number) => {
       return <WalletsInfo />;
     case 2:
       return <ConnectSignTransactions />;
+    case 3:
+      return <SendFinalBundle />;
     default:
       return 'Unknown step';
   }
@@ -41,7 +45,6 @@ export const TestWalletStepForm = () => {
   );
 
   const [activeStep, setActiveStep] = useState<number>(1);
-  // const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
   const [erroredInputName, setErroredInputName] = useState<string>('');
 
   const methods = useForm<StepperFormValues>({
@@ -49,8 +52,7 @@ export const TestWalletStepForm = () => {
   });
 
   const {
-    // handleSubmit,
-    formState: { isSubmitting, isValid },
+    formState: { isValid },
   } = methods;
 
   const [victimWalletAddress, receiverWalletAddress] = useWatch({
@@ -62,8 +64,6 @@ export const TestWalletStepForm = () => {
     switch (activeStep) {
       case 1:
         return !isValid || Object.keys(selectedTokens).length === 0;
-      case 2:
-        return !isValid;
       default:
         return false;
     }
@@ -93,6 +93,13 @@ export const TestWalletStepForm = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
 
+  const contextValue = useMemo(
+    () => ({
+      setStage: setActiveStep,
+    }),
+    [setActiveStep],
+  );
+
   // focus errored input on submit
   useEffect(() => {
     const erroredInputElement =
@@ -104,73 +111,64 @@ export const TestWalletStepForm = () => {
   }, [erroredInputName]);
 
   return (
-    <AnimatePresence mode="wait">
-      <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="text-2xl font-semibold"
-        >
-          Rescue Wallet Funds
-        </motion.p>
-
-        <motion.div
-          key={activeStep}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-        >
-          <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
-        </motion.div>
-
-        <FormProvider {...methods}>
-          <form
-            noValidate
-            className="flex w-full flex-col items-center gap-y-10"
+    <StageContext.Provider value={contextValue}>
+      <AnimatePresence mode="wait">
+        <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-2xl font-semibold"
           >
-            <Card
-              withBackground
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1, delayChildren: 0.5 }}
-              className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
-            >
-              {getStepContent(activeStep)}
-            </Card>
+            Rescue Wallet Funds
+          </motion.p>
 
-            <motion.div
-              key={activeStep}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ delay: 0.2 }}
-              className="flex justify-center space-x-[20px]"
-            >
-              {activeStep !== 3 && (
-                <Button
-                  type="button"
-                  className="w-[100px]"
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={activeStep === 1}
-                >
-                  Back
-                </Button>
-              )}
+          <motion.div
+            key={activeStep}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
+          </motion.div>
 
-              {activeStep === 2 ? (
-                <Button
-                  className="w-[100px]"
-                  type="button"
-                  onClick={() => {}}
-                  disabled={isSubmitting}
-                >
-                  Submit
-                </Button>
-              ) : (
-                activeStep < 2 && (
+          <FormProvider {...methods}>
+            <form
+              noValidate
+              className="flex w-full flex-col items-center gap-y-10"
+            >
+              <Card
+                withBackground
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1, delayChildren: 0.5 }}
+                className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
+              >
+                {getStepContent(activeStep)}
+              </Card>
+
+              <motion.div
+                key={activeStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ delay: 0.2 }}
+                className="flex justify-center space-x-[20px]"
+              >
+                {activeStep !== 3 && (
+                  <Button
+                    type="button"
+                    className="w-[100px]"
+                    variant="outline"
+                    onClick={handleBack}
+                    disabled={activeStep === 1}
+                  >
+                    Back
+                  </Button>
+                )}
+
+                {activeStep === 1 && (
                   <Button
                     type="button"
                     className="w-[100px]"
@@ -179,12 +177,12 @@ export const TestWalletStepForm = () => {
                   >
                     Next
                   </Button>
-                )
-              )}
-            </motion.div>
-          </form>
-        </FormProvider>
-      </div>
-    </AnimatePresence>
+                )}
+              </motion.div>
+            </form>
+          </FormProvider>
+        </div>
+      </AnimatePresence>
+    </StageContext.Provider>
   );
 };

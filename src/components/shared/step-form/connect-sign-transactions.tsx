@@ -1,6 +1,7 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { IconLoader2 } from '@tabler/icons-react';
+import { motion } from 'framer-motion';
 import React, {
   ReactNode,
   useCallback,
@@ -15,7 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAccount, useSendTransaction } from 'wagmi';
 
 import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
+import { LoadingSigning } from '@/components/shared/icons/loading-signing';
 import { Button } from '@/components/ui/button';
+import { useStageContext } from '@/context/stage-context';
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
 import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
@@ -42,19 +45,27 @@ const ConnectWallet = ({
   return (
     <>
       <div className="flex flex-col items-center gap-1 text-center">
-        <p className="flex justify-center gap-2">
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center gap-2"
+        >
           <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
             {titleMessage}
             <br />
           </span>
-        </p>
+        </motion.p>
         <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
           <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
           {descriptionMessage}
         </p>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+        className="flex flex-col items-center justify-center gap-4"
+      >
         <ConnectButton
           accountStatus="address"
           chainStatus="icon"
@@ -79,7 +90,7 @@ const ConnectWallet = ({
             {validAddressMessage}
           </p>
         )}
-      </div>
+      </motion.div>
     </>
   );
 };
@@ -161,15 +172,23 @@ const AddCustomRPC = ({
   return (
     <>
       <div className="flex flex-col items-center gap-1 text-center">
-        <p className="flex justify-center gap-2">
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center gap-2"
+        >
           <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
             Add Flashbots Protect RPC.
             <br />
           </span>
-        </p>
+        </motion.p>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+        className="flex flex-col items-center justify-center gap-4"
+      >
         <Button
           className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
           onClick={() => addCustomNetwork(rpcUrl)}
@@ -220,7 +239,7 @@ const AddCustomRPC = ({
             )}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </>
   );
 };
@@ -254,14 +273,18 @@ const SignFunderTransaction = ({
   return (
     <>
       <div className="flex flex-col items-center gap-1 text-center">
-        <p className="flex justify-center gap-2">
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center gap-2"
+        >
           <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
             Please sign the funder transaction.
             <br />
           </span>
-        </p>
-        <p className="flex justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:-mr-6 sm:!block" />
+        </motion.p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
           <span>
             Great! You have added the Flashbots Protect RPC. Now you need to
             sign the transaction to send ETH to the victim wallet.
@@ -269,26 +292,79 @@ const SignFunderTransaction = ({
         </p>
       </div>
 
-      <div className="mt-8 flex flex-col items-center justify-center gap-4">
-        <div className="relative size-32 p-4">
-          <div className="absolute inset-0 animate-ping rounded-full bg-purple-500/20" />
-          <div className="absolute inset-0 animate-pulse rounded-full bg-purple-500/10" />
-          <svg
-            className="relative size-full animate-pulse text-purple-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-            />
-          </svg>
-        </div>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+        className="mt-8 flex flex-col items-center justify-center gap-4"
+      >
+        <LoadingSigning />
+      </motion.div>
+    </>
+  );
+};
+
+const SignVictimTransactions = ({
+  setStage,
+  transactions,
+}: {
+  transactions: Tx[];
+  setStage: (stage: number) => void;
+}) => {
+  const { sendTransactionAsync } = useSendTransaction();
+  const { setStage: setNextStep } = useStageContext();
+
+  const [bundleId] = useLocalStorage<string | null>(
+    STORAGE_KEYS.bundleId,
+    null,
+  );
+
+  const handleSignTransactions = useCallback(async () => {
+    try {
+      await Promise.all(transactions.map((tx) => sendTransactionAsync(tx)));
+      setNextStep(3);
+    } catch (error) {
+      toast.error(
+        'Transaction failed, Try again. If the problem persists, please refresh the page.',
+      );
+      setStage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, bundleId]);
+
+  useEffect(() => {
+    handleSignTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center gap-2"
+        >
+          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
+            Please sign the following transactions on the victim wallet.
+            <br />
+          </span>
+        </motion.p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
+          <span>
+            Great! You have connected the victim wallet. Now you need to sign
+            the following transactions.
+          </span>
+        </p>
       </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+        className="mt-8 flex flex-col items-center justify-center gap-4"
+      >
+        <LoadingSigning />
+      </motion.div>
     </>
   );
 };
@@ -364,6 +440,13 @@ export const ConnectSignTransactions = () => {
               </span>
             }
             validAddressMessage="You are not connected to the victim wallet, please connect to the victim wallet"
+          />
+        );
+      case 5:
+        return (
+          <SignVictimTransactions
+            setStage={setStage}
+            transactions={transactions?.victim!}
           />
         );
       default:
