@@ -16,6 +16,10 @@ const nextConfig = {
     MEV_AUTH_SIGNER_PRIVATE_KEY: process.env.MEV_AUTH_SIGNER_PRIVATE_KEY,
     WALLET_CONNECT_PROJECT_ID: process.env.WALLET_CONNECT_PROJECT_ID,
   },
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    return config;
+  },
 };
 
 export default nextConfig;

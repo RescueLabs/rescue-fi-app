@@ -5,7 +5,6 @@ import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
 import { RainbowKitClientProvider } from '@/components/layout/rainbow-kit-provider';
 import { RpcEnforcerProvider } from '@/components/rpc-enforcer-provider';
-import { ConnectWalletButton } from '@/components/shared/connect-wallet-button';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -74,7 +73,7 @@ const RootLayout = ({
                   >
                     <DashboardSidebar />
                     <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
-                      <ConnectWalletButton />
+                      {/* <ConnectWalletButton /> */}
 
                       {children}
 
