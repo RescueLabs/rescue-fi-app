@@ -45,8 +45,7 @@ export const POST = async (req: NextRequest) => {
   const body = await req.json();
   const { bundleId } = body;
 
-  const txs = [(await getBundle(bundleId))[0]];
-  console.log('txs', txs);
+  const txs = await getBundle(bundleId);
   const flashbotsProvider = await FlashbotsBundleProvider.create(
     provider,
     authSigner,
@@ -79,9 +78,9 @@ export const POST = async (req: NextRequest) => {
   }
 
   flashbotsResponse = flashbotsResponse as FlashbotsTransactionResponse;
-  console.log('flashbotsResponse: ', flashbotsResponse);
+  // console.log('flashbotsResponse: ', flashbotsResponse);
   const simulationResponse = await flashbotsResponse.simulate();
-  console.log('simulationResponse: ', simulationResponse);
+  // console.log('simulationResponse: ', simulationResponse);
   error = (simulationResponse as RelayResponseError).error;
   if (error) {
     console.log(
@@ -100,7 +99,7 @@ export const POST = async (req: NextRequest) => {
   }
 
   const bundleResolution = await flashbotsResponse.wait();
-  console.log('bundleResolution: ', bundleResolution);
+  // console.log('bundleResolution: ', bundleResolution);
 
   if (bundleResolution === 0) {
     return NextResponse.json(
