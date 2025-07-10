@@ -22,8 +22,8 @@ module.exports = {
       '@typescript-eslint/parser': ['.ts', '.tsx'],
     },
     'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
+      node: {
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
       },
     },
   },
@@ -69,6 +69,7 @@ module.exports = {
       'warn',
       { namedComponents: 'arrow-function' },
     ],
+    'consistent-return': 'off',
     'react/jsx-props-no-spreading': [
       'off',
       {

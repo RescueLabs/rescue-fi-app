@@ -106,7 +106,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
               message: 'Invalid private key format',
             },
           })}
-          infoText={
+          infoElement={
             victimWalletAddress && (
               <motion.p
                 className="text-xxs mt-1 flex gap-1 break-all opacity-70"
@@ -164,7 +164,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
             },
           })}
           error={errors.amountToSalvage?.message}
-          infoText={
+          infoElement={
             tokenBalance &&
             tokenSymbol && (
               <p className="text-xxs mt-1 flex gap-1 opacity-70">

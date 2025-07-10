@@ -14,7 +14,7 @@ export const useDetectTokens = () => {
 
   const [alchemy] = useState<Alchemy>(
     new Alchemy({
-      apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN',
+      apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN', // TODO: move to env
       network:
         process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
           ? Network.ETH_SEPOLIA

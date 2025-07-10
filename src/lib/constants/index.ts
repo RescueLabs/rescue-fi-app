@@ -80,9 +80,16 @@ export const SEPOLIA_RECEIVER_ADDRESS =
 export const ETHEREUM_RECEIVER_ADDRESS = '';
 
 export const STORAGE_KEYS = {
+  // general
+  victimPrivateKey: 'rescuefi-victimPrivateKey',
   victimAddress: 'rescuefi-victimAddress',
   receiverAddress: 'rescuefi-receiverAddress',
   funderAddress: 'rescuefi-funderAddress',
   selectedTokens: 'rescuefi-selectedTokens',
   bundleId: 'rescuefi-bundleId',
+  gasFeeAmount: 'rescuefi-gasFeeAmount',
+
+  // airdrop
+  airdropContractAddress: 'rescuefi-airdropContractAddress',
+  airdropCallData: 'rescuefi-airdropCallData',
 };

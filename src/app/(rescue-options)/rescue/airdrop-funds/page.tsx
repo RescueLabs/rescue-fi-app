@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const AirdropStepForm = dynamic(
   () =>
-    import('@/components/shared/step-form/airdrop-step-form').then(
+    import('@/components/shared/step-form/test-airdrop-step-form').then(
       (mod) => mod.AirdropStepForm,
     ),
   {

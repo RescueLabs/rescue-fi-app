@@ -2,30 +2,20 @@ import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { IconLoader2 } from '@tabler/icons-react';
 import { motion } from 'framer-motion';
-import React, {
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
+import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { v4 as uuidv4 } from 'uuid';
 import { useAccount, useSendTransaction } from 'wagmi';
 
-import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
 import { LoadingSigning } from '@/components/shared/icons/loading-signing';
 import { Button } from '@/components/ui/button';
 import { useStageContext } from '@/context/stage-context';
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
-import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
 import { useEffectOnce } from '@/hooks/use-effect-once';
 import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
-import { ITokenMetadata } from '@/types/tokens';
 import { Tx, Txs } from '@/types/transaction';
 
-const ConnectWallet = ({
+const ConnectSponsorWallet = ({
   titleMessage,
   goToNextStage,
   isValidAddress,
@@ -95,154 +85,202 @@ const ConnectWallet = ({
   );
 };
 
-const AddCustomRPC = ({
-  uuid,
-  setStage,
-  setTransactions,
-}: {
-  uuid: string;
-  setStage: (stage: number) => void;
-  setTransactions: (transactions: Txs) => void;
-}) => {
-  const [_bundleId, setBundleId] = useLocalStorage<string | null>(
-    STORAGE_KEYS.bundleId,
+const CalculateGasFeesAndSendFunds = () => {
+  const [gasFeeAmount] = useLocalStorage<number | null>(
+    STORAGE_KEYS.gasFeeAmount,
     null,
   );
-  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.victimAddress,
-    null,
-  );
-  const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.receiverAddress,
-    null,
-  );
-  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
-    STORAGE_KEYS.selectedTokens,
-    {},
-  );
-  const [checkLoading, setCheckLoading] = useState<boolean>(false);
 
-  const { addCustomNetwork, checkIfConnectedtoFlashbotRpc } =
-    useContext(RpcEnforcerContext);
-
-  const [_, copy] = useCopyToClipboard();
-  const { createTxs } = useCreateRescueWalletTxs();
-
-  const rpcUrl = useMemo(
-    () =>
-      `https://rpc${process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? '-sepolia' : ''}.flashbots.net?bundle=${uuid}`,
-    [uuid],
-  );
-
-  const proceed = useCallback(async () => {
-    setCheckLoading(true);
-    const isConnected = await checkIfConnectedtoFlashbotRpc();
-
-    if (isConnected) {
-      setBundleId(uuid);
-      const tokens = Object.values(selectedTokens).map((token) => ({
-        token: token.address,
-        amount: BigInt(token.amountBigInt),
-      }));
-
-      if (tokens.length === 0) {
-        toast.error('No tokens selected to rescue');
-        setCheckLoading(false);
-        return;
-      }
-
-      try {
-        const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
-        setTransactions(txs);
-        setStage(3);
-      } catch (error) {
-        toast.error('Error creating transactions');
-        console.error(error, 'error creating transactions');
-      } finally {
-        setCheckLoading(false);
-      }
-    } else {
-      toast.error('Please connect to the Flashbots Protect RPC');
-    }
-
-    setCheckLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [checkLoading, _setCheckLoading] = useState<boolean>(false);
 
   return (
-    <>
-      <div className="flex flex-col items-center gap-1 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center gap-2"
-        >
-          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
-            Add Flashbots Protect RPC.
-            <br />
-          </span>
-        </motion.p>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-        className="flex flex-col items-center justify-center gap-4"
-      >
-        <Button
-          className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-          onClick={() => addCustomNetwork(rpcUrl)}
-          type="button"
-        >
-          Add automatically
-        </Button>
-
-        <div className="space-y-3 text-center text-white">
-          <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
-            <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+      className="flex flex-col items-center justify-center gap-8"
+    >
+      <div className="space-y-3 text-center text-white">
+        <p className="text-md flex justify-center text-gray-500 dark:text-gray-400">
+          <InfoCircledIcon className="hidden size-6 min-w-4 sm:!block" />
+          <div className="flex flex-col gap-3">
             <span>
-              If adding automatically does not work, please add the following
-              RPC manually to your wallet:
+              You have connected a safe wallet to send funds. Now you need to
+              send gas fees to rescue the selected tokens.
             </span>
-          </p>
-          <div className="flex flex-col gap-1">
-            <p className="text-lg font-medium">RPC Name:</p>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              RescueFi-Flashbots Protect
-            </span>
-
-            <p className="text-lg font-medium">Chain ID:</p>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {CHAIN_ID}
-            </span>
-
-            <p className="text-lg font-medium">RPC URL:</p>
-            <span className="flex justify-center">
-              <span
-                className="block w-fit cursor-pointer rounded-md bg-purple-500 bg-opacity-20 px-2 py-0.5 text-xs text-purple-500"
-                onClick={() => copy(rpcUrl)}
-              >
-                {rpcUrl}
+            <span className="text-lg">
+              The amount of gas fees is{' '}
+              <span className="font-bold text-purple-500">
+                {gasFeeAmount} ETH
               </span>
+              .
             </span>
           </div>
+        </p>
+      </div>
 
-          <Button
-            className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-            onClick={proceed}
-            type="button"
-          >
-            {checkLoading ? (
-              <IconLoader2 className="size-4 animate-spin" />
-            ) : (
-              'I have added the RPC, Proceed'
-            )}
-          </Button>
-        </div>
-      </motion.div>
-    </>
+      <Button
+        className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+        onClick={() => {}}
+        type="button"
+      >
+        {checkLoading ? (
+          <IconLoader2 className="size-4 animate-spin" />
+        ) : (
+          'Send Funds'
+        )}
+      </Button>
+    </motion.div>
   );
 };
+
+// const AddCustomRPC = ({
+//   uuid,
+//   setStage,
+//   setTransactions,
+// }: {
+//   uuid: string;
+//   setStage: (stage: number) => void;
+//   setTransactions: (transactions: Txs) => void;
+// }) => {
+//   const [_bundleId, setBundleId] = useLocalStorage<string | null>(
+//     STORAGE_KEYS.bundleId,
+//     null,
+//   );
+//   const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+//     STORAGE_KEYS.victimAddress,
+//     null,
+//   );
+//   const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
+//     STORAGE_KEYS.receiverAddress,
+//     null,
+//   );
+//   const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
+//     STORAGE_KEYS.selectedTokens,
+//     {},
+//   );
+//   const [checkLoading, setCheckLoading] = useState<boolean>(false);
+
+//   const { addCustomNetwork, checkIfConnectedtoFlashbotRpc } =
+//     useContext(RpcEnforcerContext);
+
+//   const [_, copy] = useCopyToClipboard();
+//   const { createTxs } = useCreateRescueWalletTxs();
+
+//   const rpcUrl = useMemo(
+//     () =>
+//       `https://rpc${process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? '-sepolia' : ''}.flashbots.net?bundle=${uuid}`,
+//     [uuid],
+//   );
+
+//   const proceed = useCallback(async () => {
+//     setCheckLoading(true);
+//     const isConnected = await checkIfConnectedtoFlashbotRpc();
+
+//     if (isConnected) {
+//       setBundleId(uuid);
+//       const tokens = Object.values(selectedTokens).map((token) => ({
+//         token: token.address,
+//         amount: BigInt(token.amountBigInt),
+//       }));
+
+//       if (tokens.length === 0) {
+//         toast.error('No tokens selected to rescue');
+//         setCheckLoading(false);
+//         return;
+//       }
+
+//       try {
+//         const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
+//         setTransactions(txs);
+//         setStage(3);
+//       } catch (error) {
+//         toast.error('Error creating transactions');
+//         console.error(error, 'error creating transactions');
+//       } finally {
+//         setCheckLoading(false);
+//       }
+//     } else {
+//       toast.error('Please connect to the Flashbots Protect RPC');
+//     }
+
+//     setCheckLoading(false);
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   return (
+//     <>
+//       <div className="flex flex-col items-center gap-1 text-center">
+//         <motion.p
+//           initial={{ opacity: 0, y: -10 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           className="flex justify-center gap-2"
+//         >
+//           <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
+//             Add Flashbots Protect RPC.
+//             <br />
+//           </span>
+//         </motion.p>
+//       </div>
+
+//       <motion.div
+//         initial={{ opacity: 0, y: -5 }}
+//         animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+//         className="flex flex-col items-center justify-center gap-4"
+//       >
+//         <Button
+//           className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+//           onClick={() => addCustomNetwork(rpcUrl)}
+//           type="button"
+//         >
+//           Add automatically
+//         </Button>
+
+//         <div className="space-y-3 text-center text-white">
+//           <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
+//             <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
+//             <span>
+//               If adding automatically does not work, please add the following
+//               RPC manually to your wallet:
+//             </span>
+//           </p>
+//           <div className="flex flex-col gap-1">
+//             <p className="text-lg font-medium">RPC Name:</p>
+//             <span className="text-sm text-gray-500 dark:text-gray-400">
+//               RescueFi-Flashbots Protect
+//             </span>
+
+//             <p className="text-lg font-medium">Chain ID:</p>
+//             <span className="text-sm text-gray-500 dark:text-gray-400">
+//               {CHAIN_ID}
+//             </span>
+
+//             <p className="text-lg font-medium">RPC URL:</p>
+//             <span className="flex justify-center">
+//               <span
+//                 className="block w-fit cursor-pointer rounded-md bg-purple-500 bg-opacity-20 px-2 py-0.5 text-xs text-purple-500"
+//                 onClick={() => copy(rpcUrl)}
+//               >
+//                 {rpcUrl}
+//               </span>
+//             </span>
+//           </div>
+
+//           <Button
+//             className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+//             onClick={proceed}
+//             type="button"
+//           >
+//             {checkLoading ? (
+//               <IconLoader2 className="size-4 animate-spin" />
+//             ) : (
+//               'I have added the RPC, Proceed'
+//             )}
+//           </Button>
+//         </div>
+//       </motion.div>
+//     </>
+//   );
+// };
 
 const SignFunderTransaction = ({
   setStage,
@@ -373,7 +411,7 @@ export const ConnectSignTransactions = () => {
   const uuid = uuidv4();
 
   const [stage, setStage] = useState<number>(1);
-  const [transactions, setTransactions] = useState<Txs | null>(null);
+  const [transactions, _setTransactions] = useState<Txs | null>(null);
   const [victimAddress] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.victimAddress,
     null,
@@ -387,7 +425,7 @@ export const ConnectSignTransactions = () => {
     switch (stage) {
       case 1:
         return (
-          <ConnectWallet
+          <ConnectSponsorWallet
             goToNextStage={() => setStage(2)}
             isValidAddress={(address?: `0x${string}`) =>
               address?.toLowerCase() !== victimAddress?.toLowerCase()
@@ -409,13 +447,7 @@ export const ConnectSignTransactions = () => {
           />
         );
       case 2:
-        return (
-          <AddCustomRPC
-            uuid={uuid}
-            setStage={setStage}
-            setTransactions={setTransactions}
-          />
-        );
+        return <CalculateGasFeesAndSendFunds />;
       case 3:
         return (
           <SignFunderTransaction
@@ -425,7 +457,7 @@ export const ConnectSignTransactions = () => {
         );
       case 4:
         return (
-          <ConnectWallet
+          <ConnectSponsorWallet
             goToNextStage={() => setStage(5)}
             isValidAddress={(address?: `0x${string}`) =>
               address?.toLowerCase() === victimAddress?.toLowerCase()
