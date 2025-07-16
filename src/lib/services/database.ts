@@ -101,16 +101,33 @@ export class DatabaseService {
     return record;
   }
 
+  static async getOrCreateLastBlock(chainId: number): Promise<LastBlockRecord> {
+    // Try to get existing record
+    let record = await DatabaseService.getLastBlock(chainId);
+
+    // If no record exists, create one with last_block = 0
+    if (!record) {
+      record = await DatabaseService.updateLastBlock(chainId, 0);
+    }
+
+    return record;
+  }
+
   static async updateLastBlock(
     chainId: number,
     lastBlock: number,
   ): Promise<LastBlockRecord> {
     const { data: record, error } = await supabase
       .from('last_blocks')
-      .upsert({
-        chain_id: chainId,
-        last_block: lastBlock,
-      })
+      .upsert(
+        {
+          chain_id: chainId,
+          last_block: lastBlock,
+        },
+        {
+          onConflict: 'chain_id',
+        },
+      )
       .select()
       .single();
 

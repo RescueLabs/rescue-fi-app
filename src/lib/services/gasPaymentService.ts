@@ -31,7 +31,10 @@ export class GasPaymentService {
         results.processed += chainResults.processed;
         results.errors.push(...chainResults.errors);
       } catch (error) {
-        results.errors.push(`Error processing ${networkName}: ${error}`);
+        // Log detailed error internally
+        console.error(`Error processing network ${networkName}:`, error);
+        // Return generic error to frontend
+        results.errors.push(`Failed to process network ${networkName}`);
       }
     }
 
@@ -69,12 +72,16 @@ export class GasPaymentService {
     };
 
     try {
-      // Get last processed block
-      const lastBlockRecord = await DatabaseService.getLastBlock(chainId);
-      const startBlock = lastBlockRecord
-        ? BigInt(lastBlockRecord.last_block + 1)
-        : BigInt(0);
+      // Get last processed block (creates record if it doesn't exist)
+      const lastBlockRecord =
+        await DatabaseService.getOrCreateLastBlock(chainId);
       const endBlock = await web3Service.getLatestBlockNumber(chainId);
+      let startBlock;
+      if (lastBlockRecord.last_block === 0) {
+        startBlock = endBlock;
+      } else {
+        startBlock = BigInt(lastBlockRecord.last_block + 1);
+      }
 
       if (startBlock > endBlock) {
         return results; // No new blocks to process
@@ -102,8 +109,14 @@ export class GasPaymentService {
           results.processed += batchResults.processed;
           results.errors.push(...batchResults.errors);
         } catch (error) {
+          // Log detailed error internally
+          console.error(
+            `Error processing blocks ${blockNumber}-${batchEnd}:`,
+            error,
+          );
+          // Return generic error to frontend
           results.errors.push(
-            `Error processing blocks ${blockNumber}-${batchEnd}: ${error}`,
+            `Failed to process blocks ${blockNumber}-${batchEnd}`,
           );
         }
       }
@@ -111,7 +124,12 @@ export class GasPaymentService {
       // Update last processed block
       await DatabaseService.updateLastBlock(chainId, Number(endBlock));
     } catch (error) {
-      results.errors.push(`Error processing chain ${chainId}: ${error}`);
+      // Log detailed error internally
+      console.error(`Error processing chain ${chainId}:`, error);
+      // Return generic error to frontend
+      results.errors.push(
+        `Failed to process blockchain data for chain ${chainId}`,
+      );
     }
 
     return results;
@@ -167,7 +185,10 @@ export class GasPaymentService {
               // eslint-disable-next-line no-continue
               if (!transaction) continue;
             } catch (error) {
-              results.errors.push(`Error fetching transaction ${tx}: ${error}`);
+              // Log detailed error internally
+              console.error(`Error fetching transaction ${tx}:`, error);
+              // Return generic error to frontend
+              results.errors.push(`Failed to fetch transaction data`);
               // eslint-disable-next-line no-continue
               continue;
             }
@@ -205,14 +226,21 @@ export class GasPaymentService {
                 results.processed += 1;
               }
             } catch (error) {
-              results.errors.push(
-                `Error recording gas payment ${transaction.hash}: ${error}`,
+              // Log detailed error internally
+              console.error(
+                `Error recording gas payment ${transaction.hash}:`,
+                error,
               );
+              // Return generic error to frontend
+              results.errors.push(`Failed to record gas payment`);
             }
           }
         }
       } catch (error) {
-        results.errors.push(`Error processing block ${blockNumber}: ${error}`);
+        // Log detailed error internally
+        console.error(`Error processing block ${blockNumber}:`, error);
+        // Return generic error to frontend
+        results.errors.push(`Failed to process block ${blockNumber}`);
       }
     }
 

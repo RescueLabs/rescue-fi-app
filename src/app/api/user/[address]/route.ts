@@ -34,7 +34,6 @@ export async function GET(
       {
         success: false,
         error: 'Failed to fetch user details',
-        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     );

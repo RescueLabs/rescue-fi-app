@@ -296,7 +296,6 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Gas payment not found',
-          details: `Transaction hash ${gasTransactionHash} not found in database or blockchain`,
         },
         { status: 404 },
       );
@@ -446,7 +445,6 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Failed to execute rescue transaction',
-          details: error instanceof Error ? error.message : 'Unknown error',
         },
         { status: 500 },
       );
@@ -474,7 +472,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Failed to process rescue request',
-        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     );

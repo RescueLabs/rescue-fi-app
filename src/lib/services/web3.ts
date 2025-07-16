@@ -18,12 +18,32 @@ import { getRpcUrl, getNetworkConfig } from '../config/networks';
 import { getMode } from '../config/supabase';
 import rescurooorAbi from '../constants/abis/rescurooor.json';
 
+/**
+ * Web3Service with chain-specific wallet clients
+ *
+ * This service provides separate wallet clients for each supported chain,
+ * while they all share the same wallet address (derived from the same private key).
+ *
+ * Benefits:
+ * - Better isolation: Each chain has its own client with chain-specific configuration
+ * - Improved reliability: Issues with one chain don't affect others
+ * - Chain-specific optimizations: Each client can be configured for its specific network
+ * - Shared identity: All clients use the same wallet address for consistency
+ *
+ * Architecture:
+ * - One account (derived from BACKEND_PRIVATE_KEY) shared across all chains
+ * - Separate public clients for each chain (for read operations)
+ * - Separate wallet clients for each chain (for write operations)
+ * - All clients use the same wallet address but with chain-specific RPC endpoints
+ */
 export class Web3Service {
   private publicClients: Map<number, PublicClient> = new Map();
 
-  private walletClient: WalletClient | null = null;
+  private walletClients: Map<number, WalletClient> = new Map();
 
   private mode: 'production' | 'test';
+
+  private account: ReturnType<typeof privateKeyToAccount> | null = null;
 
   constructor() {
     this.mode = getMode();
@@ -33,24 +53,32 @@ export class Web3Service {
   private initializeClients() {
     const { networks } = getNetworkConfig(this.mode);
 
+    // Initialize the account from private key (shared across all chains)
+    const privateKey = process.env.BACKEND_PRIVATE_KEY as `0x${string}`;
+    if (!privateKey) {
+      throw new Error('BACKEND_PRIVATE_KEY environment variable is required');
+    }
+    this.account = privateKeyToAccount(privateKey);
+
+    // Initialize public and wallet clients for each chain
     Object.entries(networks).forEach(([name, chain]) => {
       const rpcUrl = getRpcUrl(name, this.mode);
+
+      // Create public client for this chain
       const publicClient = createPublicClient({
         chain,
         transport: http(rpcUrl),
       });
-      this.publicClients.set(chain.id, publicClient);
-    });
+      this.publicClients.set(chain.id, publicClient as PublicClient);
 
-    // Initialize wallet client with backend private key
-    const privateKey = process.env.BACKEND_PRIVATE_KEY as `0x${string}`;
-    if (privateKey) {
-      const account = privateKeyToAccount(privateKey);
-      this.walletClient = createWalletClient({
-        account,
-        transport: http(),
+      // Create wallet client for this chain (shares the same account)
+      const walletClient = createWalletClient({
+        account: this.account!,
+        transport: http(rpcUrl),
+        chain,
       });
-    }
+      this.walletClients.set(chain.id, walletClient);
+    });
   }
 
   public getPublicClient(chainId: number): PublicClient {
@@ -61,11 +89,19 @@ export class Web3Service {
     return client;
   }
 
-  public getWalletClient(): WalletClient {
-    if (!this.walletClient) {
-      throw new Error('Wallet client not initialized');
+  public getWalletClient(chainId: number): WalletClient {
+    const client = this.walletClients.get(chainId);
+    if (!client) {
+      throw new Error(`No wallet client found for chain ID: ${chainId}`);
     }
-    return this.walletClient;
+    return client;
+  }
+
+  public getAccount(): ReturnType<typeof privateKeyToAccount> {
+    if (!this.account) {
+      throw new Error('Account not initialized');
+    }
+    return this.account;
   }
 
   public async getLatestBlockNumber(chainId: number): Promise<bigint> {
@@ -128,7 +164,8 @@ export class Web3Service {
     authorization: `0x${string}`,
     nonce: number,
   ): Promise<bigint> {
-    const client = this.getPublicClient(chainId);
+    const publicClient = this.getPublicClient(chainId);
+    const walletClient = this.getWalletClient(chainId);
 
     // Get contract address from environment
     const contractAddress = process.env.RESCUROOR_CONTRACT_ADDRESS;
@@ -153,10 +190,10 @@ export class Web3Service {
     });
 
     // Estimate gas for the transaction to the compromised address
-    const estimatedGas = await client.estimateGas({
+    const estimatedGas = await publicClient.estimateGas({
       to: compromisedAddress,
       data,
-      account: this.getWalletClient().account,
+      account: walletClient.account,
       authorizationList,
     });
 
@@ -176,8 +213,7 @@ export class Web3Service {
     maxFeePerGas: bigint,
     maxPriorityFeePerGas: bigint,
   ): Promise<`0x${string}`> {
-    const walletClient = this.getWalletClient();
-    const publicClient = this.getPublicClient(chainId);
+    const walletClient = this.getWalletClient(chainId);
 
     // Get contract address from environment
     const contractAddress = process.env.RESCUROOR_CONTRACT_ADDRESS;
@@ -208,8 +244,8 @@ export class Web3Service {
       gas: gasLimit,
       maxFeePerGas,
       maxPriorityFeePerGas,
-      chain: publicClient.chain,
-      account: walletClient.account!,
+      account: this.getWalletAddress(),
+      chain: walletClient.chain,
       authorizationList,
     });
 
@@ -253,6 +289,21 @@ export class Web3Service {
   public async ethToGas(ethValue: bigint, chainId: number): Promise<bigint> {
     const gasPrice = await this.getGasPrice(chainId);
     return ethValue / gasPrice;
+  }
+
+  // Get all supported chain IDs
+  public getSupportedChainIds(): number[] {
+    return Array.from(this.publicClients.keys());
+  }
+
+  // Check if a chain is supported
+  public isChainSupported(chainId: number): boolean {
+    return this.publicClients.has(chainId);
+  }
+
+  // Get the wallet address (same across all chains)
+  public getWalletAddress(): Address {
+    return this.getAccount().address;
   }
 }
 

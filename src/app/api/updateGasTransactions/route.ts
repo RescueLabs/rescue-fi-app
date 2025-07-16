@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Failed to update gas transactions',
-        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     );
