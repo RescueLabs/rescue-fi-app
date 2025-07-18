@@ -168,7 +168,7 @@ export class Web3Service {
     const walletClient = this.getWalletClient(chainId);
 
     // Get contract address from environment
-    const contractAddress = process.env.RESCUROOR_CONTRACT_ADDRESS;
+    const contractAddress = process.env.RESCUROOOR_CONTRACT_ADDRESS;
     if (!contractAddress) {
       throw new Error('Rescurooor contract address not configured');
     }
@@ -216,7 +216,7 @@ export class Web3Service {
     const walletClient = this.getWalletClient(chainId);
 
     // Get contract address from environment
-    const contractAddress = process.env.RESCUROOR_CONTRACT_ADDRESS;
+    const contractAddress = process.env.RESCUROOOR_CONTRACT_ADDRESS;
     if (!contractAddress) {
       throw new Error('Rescurooor contract address not configured');
     }
