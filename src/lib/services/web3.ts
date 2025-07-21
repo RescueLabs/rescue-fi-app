@@ -208,7 +208,7 @@ export class Web3Service {
     deadline: bigint,
     signature: `0x${string}`,
     authorization: `0x${string}`,
-    nonce: number,
+    nonce: number, // authorization nonce (compromised address nonce)
     gasLimit: bigint,
     maxFeePerGas: bigint,
     maxPriorityFeePerGas: bigint,
@@ -244,7 +244,7 @@ export class Web3Service {
       gas: gasLimit,
       maxFeePerGas,
       maxPriorityFeePerGas,
-      account: this.getWalletAddress(),
+      account: this.account,
       chain: walletClient.chain,
       authorizationList,
     });
@@ -278,6 +278,9 @@ export class Web3Service {
     const publicClient = this.getPublicClient(chainId);
     const { maxFeePerGas, maxPriorityFeePerGas } =
       await publicClient.estimateFeesPerGas();
+
+    console.log('maxFeePerGas', maxFeePerGas);
+    console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
 
     return {
       gasInEth: gasUnits * maxFeePerGas,
