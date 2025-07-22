@@ -457,11 +457,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Get user details to calculate remaining gas
-    const userDetails = await DatabaseService.getUserDetails(
+    const gasSummary = await DatabaseService.getGasSummary(
       compromisedAddress,
       chainId,
     );
-    const remainingEth = BigInt(userDetails.remaining_eth);
+    const remainingEth = BigInt(gasSummary.remaining_eth);
 
     // 6. Estimate gas for rescue transaction
     try {
@@ -515,7 +515,6 @@ export async function POST(request: NextRequest) {
         eth_used: '0', // Will be updated after transaction
         chain_id: chainId,
         deadline,
-        rescue_count: userDetails.rescue_count + 1,
         status: 'pending',
       });
 

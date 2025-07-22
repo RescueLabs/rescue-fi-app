@@ -3,7 +3,7 @@ import { supabase } from '../config/supabase';
 import type {
   GasPayment,
   RescueTransaction,
-  UserDetails,
+  GasSummary,
   LastBlockRecord,
 } from '../types/rescue';
 
@@ -141,11 +141,11 @@ export class DatabaseService {
     return record;
   }
 
-  // User Details
-  static async getUserDetails(
+  // Gas Summary
+  static async getGasSummary(
     address: string,
     chainId: number,
-  ): Promise<UserDetails> {
+  ): Promise<GasSummary> {
     const normalizedAddress = address.toLowerCase();
 
     // Get gas payments
@@ -172,17 +172,11 @@ export class DatabaseService {
 
     const remainingEth = totalEthPaid - totalEthUsed;
 
-    // Get rescue count
-    const rescueCount = rescueTransactions.length;
-
     return {
       compromised_address: normalizedAddress,
-      gas_payments: gasPayments,
-      rescue_transactions: rescueTransactions,
       total_eth_paid: totalEthPaid.toString(),
       total_eth_used: totalEthUsed.toString(),
       remaining_eth: remainingEth.toString(),
-      rescue_count: rescueCount,
     };
   }
 

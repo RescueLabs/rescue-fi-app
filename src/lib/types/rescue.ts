@@ -20,7 +20,6 @@ export interface RescueTransaction {
   chain_id: number;
   deadline: number;
   created_at: string;
-  rescue_count: number;
   status: 'pending' | 'success' | 'failed';
 }
 
@@ -36,14 +35,11 @@ export interface RescueRequest {
   nonce: number; // Nonce for the authorization
 }
 
-export interface UserDetails {
+export interface GasSummary {
   compromised_address: string;
-  gas_payments: GasPayment[];
-  rescue_transactions: RescueTransaction[];
   total_eth_paid: string; // Total ETH paid for gas
   total_eth_used: string; // Total ETH used for gas
   remaining_eth: string; // Remaining ETH balance
-  rescue_count: number;
 }
 
 export interface GasTransactionData {
