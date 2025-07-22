@@ -22,11 +22,15 @@ export class DatabaseService {
     return payment;
   }
 
-  static async getGasPaymentsByAddress(address: string): Promise<GasPayment[]> {
+  static async getGasPaymentsByAddress(
+    address: string,
+    chainId: number,
+  ): Promise<GasPayment[]> {
     const { data: payments, error } = await supabase
       .from('gas_payments')
       .select('*')
-      .eq('compromised_address', address.toLowerCase());
+      .eq('compromised_address', address.toLowerCase())
+      .eq('chain_id', chainId);
 
     if (error) throw error;
     return payments || [];
@@ -59,11 +63,13 @@ export class DatabaseService {
 
   static async getRescueTransactionsByAddress(
     address: string,
+    chainId: number,
   ): Promise<RescueTransaction[]> {
     const { data: transactions, error } = await supabase
       .from('rescue_transactions')
       .select('*')
-      .eq('compromised_address', address.toLowerCase());
+      .eq('compromised_address', address.toLowerCase())
+      .eq('chain_id', chainId);
 
     if (error) throw error;
     return transactions || [];
@@ -136,16 +142,24 @@ export class DatabaseService {
   }
 
   // User Details
-  static async getUserDetails(address: string): Promise<UserDetails> {
+  static async getUserDetails(
+    address: string,
+    chainId: number,
+  ): Promise<UserDetails> {
     const normalizedAddress = address.toLowerCase();
 
     // Get gas payments
-    const gasPayments =
-      await DatabaseService.getGasPaymentsByAddress(normalizedAddress);
+    const gasPayments = await DatabaseService.getGasPaymentsByAddress(
+      normalizedAddress,
+      chainId,
+    );
 
     // Get rescue transactions
     const rescueTransactions =
-      await DatabaseService.getRescueTransactionsByAddress(normalizedAddress);
+      await DatabaseService.getRescueTransactionsByAddress(
+        normalizedAddress,
+        chainId,
+      );
 
     // Calculate totals
     const totalEthPaid = gasPayments.reduce((sum, payment) => {

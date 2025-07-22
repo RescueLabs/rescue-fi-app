@@ -117,15 +117,12 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (
-      !authorization ||
       !eip712Signature ||
       !tokens ||
       !deadline ||
       !receiverWallet ||
-      !gasTransactionHash ||
       !compromisedAddress ||
-      !chainId ||
-      nonce === undefined
+      !chainId
     ) {
       return NextResponse.json(
         {
@@ -145,6 +142,20 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid address format',
+        },
+        { status: 400 },
+      );
+    }
+
+    // Validate signature formats
+    if (
+      !/^0x[a-fA-F0-9]{130}$/.test(eip712Signature) ||
+      (authorization && !/^0x[a-fA-F0-9]{130}$/.test(authorization))
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid signature format',
         },
         { status: 400 },
       );
@@ -182,7 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate nonce
-    if (typeof nonce !== 'number' || nonce < 0) {
+    if (authorization && (typeof nonce !== 'number' || nonce < 0)) {
       return NextResponse.json(
         {
           success: false,
@@ -190,6 +201,23 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 },
       );
+    }
+
+    // Validate compromised address is already delegated
+    if (!authorization) {
+      const isDelegated = await web3Service.isDelegated(
+        compromisedAddress as `0x${string}`,
+        chainId,
+      );
+      if (!isDelegated) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Compromised address is not delegated',
+          },
+          { status: 400 },
+        );
+      }
     }
 
     // Acquire mutex for this compromised address
@@ -214,218 +242,225 @@ export async function POST(request: NextRequest) {
     console.log(`Acquired rescue mutex for address: ${compromisedAddress}`);
 
     console.log(
-      `Processing rescue for address: ${compromisedAddress} on chain: ${chainId} with nonce: ${nonce}`,
+      `Processing rescue for address: ${compromisedAddress} on chain:${chainId} ${nonce ? ` with nonce: ${nonce}` : '.'}`,
     );
 
-    // 1. First check if gas payment exists in database
-    let gasPayment =
-      await DatabaseService.getGasPaymentByHash(gasTransactionHash);
+    // if user paid for gas add it to user details in database
+    if (gasTransactionHash) {
+      // 1. First check if gas payment exists in database
+      let gasPayment =
+        await DatabaseService.getGasPaymentByHash(gasTransactionHash);
 
-    // 2. If not found, update all gas payments for this specific chain using TransactionService
-    if (!gasPayment) {
-      console.log(
-        `Gas payment ${gasTransactionHash} not found in database. Updating all gas payments for chain ${chainId}...`,
-      );
-
-      // Acquire chain-specific mutex for gas payment processing
-      const chainMutex = getChainMutex(chainId);
-      await chainMutex.acquire(chainId);
-
-      console.log(`Acquired chain mutex for chain: ${chainId}`);
-
-      try {
-        // Get the last processed block for this chain
-        const lastBlock = await DatabaseService.getOrCreateLastBlock(chainId);
-        const startBlock = lastBlock.last_block + 1;
-
-        // Get current block number to use as endBlock
-        const publicClient = web3Service.getPublicClient(chainId);
-        const currentBlock = await publicClient.getBlockNumber();
-        const endBlock = Number(currentBlock);
-
-        if (startBlock <= endBlock) {
-          console.log(
-            `Processing gas payments for chain ${chainId} from block ${startBlock} to ${endBlock}`,
-          );
-
-          // Fetch gas payment transactions from Etherscan
-          const gasPaymentTransactions =
-            await TransactionService.getGasPaymentTransactionsWithPagination(
-              chainId,
-              startBlock,
-              endBlock,
-            );
-
-          console.log(
-            `Found ${gasPaymentTransactions.length} gas payment transactions`,
-          );
-
-          // Process each gas payment transaction
-          for (let i = 0; i < gasPaymentTransactions.length; i++) {
-            const tx = gasPaymentTransactions[i];
-            try {
-              // Extract gas payment data
-              const gasPaymentData = TransactionService.extractGasPaymentData(
-                tx,
-                chainId,
-              );
-              if (gasPaymentData) {
-                // Check if already recorded
-                // eslint-disable-next-line no-await-in-loop
-                const exists = await DatabaseService.gasPaymentExists(tx.hash);
-                if (!exists) {
-                  // Record the gas payment
-                  // eslint-disable-next-line no-await-in-loop
-                  await DatabaseService.createGasPayment({
-                    compromised_address: gasPaymentData.compromised_address,
-                    gas_transaction_hash: tx.hash,
-                    eth_paid: tx.value,
-                    chain_id: chainId,
-                    block_number: parseInt(tx.blockNumber, 10),
-                  });
-                  console.log(
-                    `Recorded gas payment: ${tx.hash} for address: ${gasPaymentData.compromised_address}`,
-                  );
-                }
-              }
-            } catch (error) {
-              console.error(
-                `Error processing gas payment transaction ${tx.hash}:`,
-                error,
-              );
-            }
-          }
-
-          // Update last processed block
-          await DatabaseService.updateLastBlock(chainId, endBlock);
-        }
-
-        // Check again after updating
-        gasPayment =
-          await DatabaseService.getGasPaymentByHash(gasTransactionHash);
-      } catch (error) {
-        console.error(
-          `Error updating gas payments for chain ${chainId}:`,
-          error,
+      // 2. If not found, update all gas payments for this specific chain using TransactionService
+      if (!gasPayment) {
+        console.log(
+          `Gas payment ${gasTransactionHash} not found in database. Updating all gas payments for chain ${chainId}...`,
         );
-      } finally {
-        // Release chain mutex
-        chainMutex.release();
-        console.log(`Released chain mutex for chain: ${chainId}`);
-      }
-    }
 
-    // 3. If still not found, fetch the specific transaction directly using public client
-    if (!gasPayment) {
-      console.log(
-        `Gas payment ${gasTransactionHash} still not found. Fetching transaction directly using public client...`,
-      );
+        // Acquire chain-specific mutex for gas payment processing
+        const chainMutex = getChainMutex(chainId);
+        await chainMutex.acquire(chainId);
 
-      try {
-        // Get the transaction directly using the public client
-        const publicClient = web3Service.getPublicClient(chainId);
-        const transaction = await publicClient.getTransaction({
-          hash: gasTransactionHash as `0x${string}`,
-        });
+        console.log(`Acquired chain mutex for chain: ${chainId}`);
 
-        if (transaction) {
-          // Check if this transaction is to our backend wallet
-          const backendAddress =
-            process.env.BACKEND_WALLET_ADDRESS?.toLowerCase();
-          if (
-            backendAddress &&
-            transaction.to?.toLowerCase() === backendAddress
-          ) {
-            // Convert viem transaction to our format
-            const etherscanTx = {
-              blockNumber: transaction.blockNumber?.toString() || '0',
-              timeStamp: '0', // We don't have timestamp from viem
-              hash: transaction.hash,
-              nonce: transaction.nonce.toString(),
-              blockHash: transaction.blockHash || '',
-              transactionIndex: '0',
-              from: transaction.from,
-              to: transaction.to || '',
-              value: transaction.value.toString(),
-              gas: transaction.gas.toString(),
-              gasPrice: transaction.gasPrice?.toString() || '0',
-              isError: '0',
-              txreceipt_status: '1',
-              input: transaction.input,
-              contractAddress: '',
-              cumulativeGasUsed: '0',
-              gasUsed: '0',
-              confirmations: '0',
-              methodId: transaction.input.slice(0, 10),
-              functionName: '',
-            };
+        try {
+          // Get the last processed block for this chain
+          const lastBlock = await DatabaseService.getOrCreateLastBlock(chainId);
+          const startBlock = lastBlock.last_block + 1;
 
-            // Extract gas payment data
-            const gasPaymentData = TransactionService.extractGasPaymentData(
-              etherscanTx,
-              chainId,
+          // Get current block number to use as endBlock
+          const publicClient = web3Service.getPublicClient(chainId);
+          const currentBlock = await publicClient.getBlockNumber();
+          const endBlock = Number(currentBlock);
+
+          if (startBlock <= endBlock) {
+            console.log(
+              `Processing gas payments for chain ${chainId} from block ${startBlock} to ${endBlock}`,
             );
-            if (gasPaymentData) {
-              // Check if already recorded
-              const exists = await DatabaseService.gasPaymentExists(
-                transaction.hash,
+
+            // Fetch gas payment transactions from Etherscan
+            const gasPaymentTransactions =
+              await TransactionService.getGasPaymentTransactionsWithPagination(
+                chainId,
+                startBlock,
+                endBlock,
               );
-              if (!exists) {
-                // Record the gas payment
-                await DatabaseService.createGasPayment({
-                  compromised_address: gasPaymentData.compromised_address,
-                  gas_transaction_hash: transaction.hash,
-                  eth_paid: transaction.value.toString(),
-                  chain_id: chainId,
-                  block_number: Number(transaction.blockNumber),
-                });
-                console.log(
-                  `Recorded gas payment from direct fetch: ${transaction.hash} for address: ${gasPaymentData.compromised_address}`,
+
+            console.log(
+              `Found ${gasPaymentTransactions.length} gas payment transactions`,
+            );
+
+            // Process each gas payment transaction
+            for (let i = 0; i < gasPaymentTransactions.length; i++) {
+              const tx = gasPaymentTransactions[i];
+              try {
+                // Extract gas payment data
+                const gasPaymentData = TransactionService.extractGasPaymentData(
+                  tx,
+                  chainId,
+                );
+                if (gasPaymentData) {
+                  // Check if already recorded
+                  // eslint-disable-next-line no-await-in-loop
+                  const exists = await DatabaseService.gasPaymentExists(
+                    tx.hash,
+                  );
+                  if (!exists) {
+                    // Record the gas payment
+                    // eslint-disable-next-line no-await-in-loop
+                    await DatabaseService.createGasPayment({
+                      compromised_address: gasPaymentData.compromised_address,
+                      gas_transaction_hash: tx.hash,
+                      eth_paid: tx.value,
+                      chain_id: chainId,
+                      block_number: parseInt(tx.blockNumber, 10),
+                    });
+                    console.log(
+                      `Recorded gas payment: ${tx.hash} for address: ${gasPaymentData.compromised_address}`,
+                    );
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error processing gas payment transaction ${tx.hash}:`,
+                  error,
                 );
               }
             }
 
-            // Check again after direct fetch
-            gasPayment =
-              await DatabaseService.getGasPaymentByHash(gasTransactionHash);
+            // Update last processed block
+            await DatabaseService.updateLastBlock(chainId, endBlock);
           }
+
+          // Check again after updating
+          gasPayment =
+            await DatabaseService.getGasPaymentByHash(gasTransactionHash);
+        } catch (error) {
+          console.error(
+            `Error updating gas payments for chain ${chainId}:`,
+            error,
+          );
+        } finally {
+          // Release chain mutex
+          chainMutex.release();
+          console.log(`Released chain mutex for chain: ${chainId}`);
         }
-      } catch (error) {
-        console.error(
-          `Error fetching transaction directly using public client:`,
-          error,
+      }
+
+      // 3. If still not found, fetch the specific transaction directly using public client
+      if (!gasPayment) {
+        console.log(
+          `Gas payment ${gasTransactionHash} still not found. Fetching transaction directly using public client...`,
+        );
+
+        try {
+          // Get the transaction directly using the public client
+          const publicClient = web3Service.getPublicClient(chainId);
+          const transaction = await publicClient.getTransaction({
+            hash: gasTransactionHash as `0x${string}`,
+          });
+
+          if (transaction) {
+            // Check if this transaction is to our backend wallet
+            const backendAddress =
+              process.env.BACKEND_WALLET_ADDRESS?.toLowerCase();
+            if (
+              backendAddress &&
+              transaction.to?.toLowerCase() === backendAddress
+            ) {
+              // Convert viem transaction to our format
+              const etherscanTx = {
+                blockNumber: transaction.blockNumber?.toString() || '0',
+                timeStamp: '0', // We don't have timestamp from viem
+                hash: transaction.hash,
+                nonce: transaction.nonce.toString(),
+                blockHash: transaction.blockHash || '',
+                transactionIndex: '0',
+                from: transaction.from,
+                to: transaction.to || '',
+                value: transaction.value.toString(),
+                gas: transaction.gas.toString(),
+                gasPrice: transaction.gasPrice?.toString() || '0',
+                isError: '0',
+                txreceipt_status: '1',
+                input: transaction.input,
+                contractAddress: '',
+                cumulativeGasUsed: '0',
+                gasUsed: '0',
+                confirmations: '0',
+                methodId: transaction.input.slice(0, 10),
+                functionName: '',
+              };
+
+              // Extract gas payment data
+              const gasPaymentData = TransactionService.extractGasPaymentData(
+                etherscanTx,
+                chainId,
+              );
+              if (gasPaymentData) {
+                // Check if already recorded
+                const exists = await DatabaseService.gasPaymentExists(
+                  transaction.hash,
+                );
+                if (!exists) {
+                  // Record the gas payment
+                  await DatabaseService.createGasPayment({
+                    compromised_address: gasPaymentData.compromised_address,
+                    gas_transaction_hash: transaction.hash,
+                    eth_paid: transaction.value.toString(),
+                    chain_id: chainId,
+                    block_number: Number(transaction.blockNumber),
+                  });
+                  console.log(
+                    `Recorded gas payment from direct fetch: ${transaction.hash} for address: ${gasPaymentData.compromised_address}`,
+                  );
+                }
+              }
+
+              // Check again after direct fetch
+              gasPayment =
+                await DatabaseService.getGasPaymentByHash(gasTransactionHash);
+            }
+          }
+        } catch (error) {
+          console.error(
+            `Error fetching transaction directly using public client:`,
+            error,
+          );
+        }
+      }
+
+      // 4. If still not found, return 404
+      if (!gasPayment) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Gas payment not found',
+          },
+          { status: 404 },
+        );
+      }
+
+      // 4. Verify gas payment matches compromised address
+      if (
+        gasPayment.compromised_address.toLowerCase() !==
+        compromisedAddress.toLowerCase()
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Gas payment does not match compromised address',
+          },
+          { status: 400 },
         );
       }
     }
 
-    // 4. If still not found, return 404
-    if (!gasPayment) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Gas payment not found',
-        },
-        { status: 404 },
-      );
-    }
-
-    // 4. Verify gas payment matches compromised address
-    if (
-      gasPayment.compromised_address.toLowerCase() !==
-      compromisedAddress.toLowerCase()
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Gas payment does not match compromised address',
-        },
-        { status: 400 },
-      );
-    }
-
     // 5. Get user details to calculate remaining gas
-    const userDetails =
-      await DatabaseService.getUserDetails(compromisedAddress);
+    const userDetails = await DatabaseService.getUserDetails(
+      compromisedAddress,
+      chainId,
+    );
     const remainingEth = BigInt(userDetails.remaining_eth);
 
     // 6. Estimate gas for rescue transaction
@@ -437,15 +472,20 @@ export async function POST(request: NextRequest) {
         tokens as `0x${string}`[],
         BigInt(deadline),
         eip712Signature as `0x${string}`,
-        authorization as `0x${string}`,
-        Number(nonce),
+        (authorization as `0x${string}`) || '',
+        Number(nonce || 0),
       );
 
-      estimatedGasUnits *= BigInt(1.1);
+      console.log('estimatedGasUnits', estimatedGasUnits);
+      estimatedGasUnits = (estimatedGasUnits * BigInt(110)) / BigInt(100);
+      console.log('estimatedGasUnits', estimatedGasUnits);
 
       // Convert gas units to ETH value
       const { gasInEth: estimatedGasEth, priorityFee: maxPriorityFeePerGas } =
         await web3Service.gasToEth(estimatedGasUnits, chainId);
+
+      console.log('estimatedGasEth', estimatedGasEth);
+      console.log('remainingEth', remainingEth);
 
       // Check if user has enough gas (in ETH value)
       if (estimatedGasEth > remainingEth) {
@@ -469,7 +509,7 @@ export async function POST(request: NextRequest) {
         compromised_address: compromisedAddress.toLowerCase(),
         receiver_address: receiverWallet.toLowerCase(),
         tokens: tokens.map((t) => t.toLowerCase()),
-        gas_transaction_hash: gasTransactionHash,
+        gas_transaction_hash: gasTransactionHash || '',
         rescue_transaction_hash: '', // Will be updated after transaction
         gas_used: '0', // Will be updated after transaction
         eth_used: '0', // Will be updated after transaction
@@ -487,8 +527,8 @@ export async function POST(request: NextRequest) {
         tokens as `0x${string}`[],
         BigInt(deadline),
         eip712Signature as `0x${string}`,
-        authorization as `0x${string}`,
-        Number(nonce),
+        (authorization as `0x${string}`) || '',
+        Number(nonce || 0),
         estimatedGasUnits,
         maxFeePerGas,
         maxPriorityFeePerGas,
@@ -556,15 +596,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 },
       );
-    } finally {
-      // Release mutex after processing
-      if (rescueMutex) {
-        const address = rescueMutex.getCurrentAddress();
-        rescueMutex.release();
-        console.log(
-          `Released rescue mutex for address: ${address || 'unknown'}`,
-        );
-      }
     }
   } catch (error) {
     console.error('Error processing rescue request:', error);
@@ -584,13 +615,11 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   } finally {
-    // Release mutex after processing (in case of early errors)
+    // Release mutex after processing
     if (rescueMutex) {
       const address = rescueMutex.getCurrentAddress();
       rescueMutex.release();
-      console.log(
-        `Released rescue mutex for address: ${address || 'unknown'} (early error case)`,
-      );
+      console.log(`Released rescue mutex for address: ${address || 'unknown'}`);
     }
   }
 }

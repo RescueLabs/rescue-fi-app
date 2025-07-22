@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   createPublicClient,
   createWalletClient,
@@ -161,7 +162,7 @@ export class Web3Service {
     tokens: Address[],
     deadline: bigint,
     signature: `0x${string}`,
-    authorization: `0x${string}`,
+    authorization: `0x${string}` | '',
     nonce: number,
   ): Promise<bigint> {
     const publicClient = this.getPublicClient(chainId);
@@ -173,14 +174,17 @@ export class Web3Service {
       throw new Error('Rescurooor contract address not configured');
     }
 
-    // Parse authorization and create authorization list
-    const authorizationData = Web3Service.parseAuthorization(
-      authorization,
-      nonce,
-      chainId,
-      contractAddress,
-    );
-    const authorizationList = [authorizationData];
+    let authorizationList: SignAuthorizationReturnType[] = [];
+    if (authorization) {
+      // Parse authorization and create authorization list
+      const authorizationData = Web3Service.parseAuthorization(
+        authorization,
+        nonce,
+        chainId,
+        contractAddress,
+      );
+      authorizationList = [authorizationData];
+    }
 
     // Encode the rescue_erc20 function data
     const data = encodeFunctionData({
@@ -189,14 +193,23 @@ export class Web3Service {
       args: [recipient, tokens, deadline, signature],
     });
 
+    let estimatedGas;
     // Estimate gas for the transaction to the compromised address
-    const estimatedGas = await publicClient.estimateGas({
-      to: compromisedAddress,
-      data,
-      account: walletClient.account,
-      authorizationList,
-    });
-
+    // can't send empty authorizationList
+    if (authorizationList.length > 0) {
+      estimatedGas = await publicClient.estimateGas({
+        to: compromisedAddress,
+        data,
+        account: walletClient.account,
+        authorizationList,
+      });
+    } else {
+      estimatedGas = await publicClient.estimateGas({
+        to: compromisedAddress,
+        data,
+        account: walletClient.account,
+      });
+    }
     return estimatedGas;
   }
 
@@ -207,7 +220,7 @@ export class Web3Service {
     tokens: Address[],
     deadline: bigint,
     signature: `0x${string}`,
-    authorization: `0x${string}`,
+    authorization: `0x${string}` | '',
     nonce: number, // authorization nonce (compromised address nonce)
     gasLimit: bigint,
     maxFeePerGas: bigint,
@@ -220,15 +233,17 @@ export class Web3Service {
     if (!contractAddress) {
       throw new Error('Rescurooor contract address not configured');
     }
-
-    // Parse authorization and create authorization list
-    const authorizationData = Web3Service.parseAuthorization(
-      authorization,
-      nonce,
-      chainId,
-      contractAddress,
-    );
-    const authorizationList = [authorizationData];
+    let authorizationList: SignAuthorizationReturnType[] = [];
+    if (authorization) {
+      // Parse authorization and create authorization list
+      const authorizationData = Web3Service.parseAuthorization(
+        authorization,
+        nonce,
+        chainId,
+        contractAddress,
+      );
+      authorizationList = [authorizationData];
+    }
 
     // Encode the rescue_erc20 function data
     const data = encodeFunctionData({
@@ -238,17 +253,30 @@ export class Web3Service {
     });
 
     // Send transaction to the compromised address with authorization
-    const hash = await walletClient.sendTransaction({
-      to: compromisedAddress,
-      data,
-      gas: gasLimit,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      account: this.account,
-      chain: walletClient.chain,
-      authorizationList,
-    });
-
+    // can't send empty authorizationList
+    let hash;
+    if (authorizationList.length > 0) {
+      hash = await walletClient.sendTransaction({
+        to: compromisedAddress,
+        data,
+        gas: gasLimit,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        account: this.account,
+        chain: walletClient.chain,
+        authorizationList,
+      });
+    } else {
+      hash = await walletClient.sendTransaction({
+        to: compromisedAddress,
+        data,
+        gas: gasLimit,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        account: this.account,
+        chain: walletClient.chain,
+      });
+    }
     return hash;
   }
 
@@ -268,6 +296,38 @@ export class Web3Service {
 
   public static formatEther(amount: bigint): string {
     return formatEther(amount);
+  }
+
+  public async isDelegated(
+    address: Address,
+    chainId: number,
+  ): Promise<boolean> {
+    const publicClient = this.getPublicClient(chainId);
+    // eth_getCode is called directly because publicClient.getCode does not return the bytecode of delegated addresses
+    // but it returns it if a second call is done with publicClient.getCode
+    const response = await axios.post(
+      publicClient.transport.url,
+      {
+        jsonrpc: '2.0',
+        method: 'eth_getCode',
+        params: [address, 'latest'],
+        id: 1,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const bytecode = response.data.result;
+    if (!bytecode) {
+      return false;
+    }
+    return (
+      bytecode ===
+      `0xef0100${process.env.RESCUROOOR_CONTRACT_ADDRESS?.slice(2)}`.toLowerCase()
+    );
   }
 
   // Convert gas units to ETH value
