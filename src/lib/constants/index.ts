@@ -88,8 +88,16 @@ export const STORAGE_KEYS = {
   selectedTokens: 'rescuefi-selectedTokens',
   bundleId: 'rescuefi-bundleId',
   gasFeeAmount: 'rescuefi-gasFeeAmount',
+  authorizationSignature: 'rescuefi-authorizationSignature',
+  eip712Signature: 'rescuefi-eip712Signature',
 
   // airdrop
   airdropContractAddress: 'rescuefi-airdropContractAddress',
   airdropCallData: 'rescuefi-airdropCallData',
 };
+
+export const RESCUER_CONTRACT_ADDRESS =
+  '0xf25AC6Da051F8a3EDdC5fE91943D62183b7DCa47';
+
+export const BACKEND_WALLET_ADDRESS =
+  '0x0000000000000000000000000000000000000000';

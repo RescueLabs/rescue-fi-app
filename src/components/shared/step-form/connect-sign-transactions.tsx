@@ -6,13 +6,24 @@ import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { v4 as uuidv4 } from 'uuid';
-import { useAccount, useSendTransaction } from 'wagmi';
+import { encodeFunctionData } from 'viem';
+import { SignAuthorizationReturnType } from 'viem/actions';
+import { useAccount, useEstimateGas, useSendTransaction } from 'wagmi';
 
 import { LoadingSigning } from '@/components/shared/icons/loading-signing';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useStageContext } from '@/context/stage-context';
 import { useEffectOnce } from '@/hooks/use-effect-once';
-import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
+import {
+  BACKEND_WALLET_ADDRESS,
+  CHAIN_ID,
+  RESCUER_CONTRACT_ADDRESS,
+  STORAGE_KEYS,
+} from '@/lib/constants';
+import RESCUER_ABI from '@/lib/constants/abis/rescuer.json';
+import { getPrivateKeyAccount, getWalletClient } from '@/lib/utils';
+import { ITokenMetadata } from '@/types/tokens';
 import { Tx, Txs } from '@/types/transaction';
 
 const ConnectSponsorWallet = ({
@@ -85,13 +96,51 @@ const ConnectSponsorWallet = ({
   );
 };
 
-const CalculateGasFeesAndSendFunds = () => {
-  const [gasFeeAmount] = useLocalStorage<number | null>(
-    STORAGE_KEYS.gasFeeAmount,
-    null,
+const CalculateGasFeesAndSendFunds = ({
+  authorizationSignature,
+  eip712Signature,
+  rescueTokenAddresses,
+  deadline,
+  victimWalletAddress,
+  receiverWalletAddress,
+}: {
+  authorizationSignature: SignAuthorizationReturnType | null;
+  eip712Signature: string | null;
+  rescueTokenAddresses: `0x${string}`[];
+  deadline: bigint;
+  victimWalletAddress: `0x${string}` | null;
+  receiverWalletAddress: `0x${string}` | null;
+}) => {
+  const rescueErc20Data = useMemo(
+    () =>
+      encodeFunctionData({
+        abi: RESCUER_ABI,
+        functionName: 'rescue_erc20',
+        args: [
+          receiverWalletAddress!,
+          rescueTokenAddresses,
+          deadline,
+          eip712Signature!,
+        ],
+      }),
+    [],
   );
 
-  const [checkLoading, _setCheckLoading] = useState<boolean>(false);
+  const { data: rescueErc20Gas, isLoading: isRescueErc20GasLoading } =
+    useEstimateGas({
+      authorizationList: [authorizationSignature!],
+      data: rescueErc20Data,
+      to: victimWalletAddress!,
+      query: {
+        enabled:
+          !!victimWalletAddress &&
+          !!authorizationSignature &&
+          !!rescueErc20Data,
+      },
+    });
+
+  const { sendTransactionAsync, isPending: isSendingRescueErc20Gas } =
+    useSendTransaction();
 
   return (
     <motion.div
@@ -110,7 +159,12 @@ const CalculateGasFeesAndSendFunds = () => {
             <span className="text-lg">
               The amount of gas fees is{' '}
               <span className="font-bold text-purple-500">
-                {gasFeeAmount} ETH
+                {isRescueErc20GasLoading ? (
+                  <Skeleton className="h-4 w-28" />
+                ) : (
+                  rescueErc20Gas
+                )}
+                ETH
               </span>
               .
             </span>
@@ -120,10 +174,19 @@ const CalculateGasFeesAndSendFunds = () => {
 
       <Button
         className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-        onClick={() => {}}
+        onClick={() => {
+          sendTransactionAsync({
+            to: BACKEND_WALLET_ADDRESS,
+            data: rescueErc20Data,
+            value: rescueErc20Gas
+              ? rescueErc20Gas + rescueErc20Gas * BigInt(0.2) // 20% buffer
+              : rescueErc20Gas,
+          });
+        }}
         type="button"
+        disabled={isSendingRescueErc20Gas || !rescueErc20Gas}
       >
-        {checkLoading ? (
+        {isSendingRescueErc20Gas ? (
           <IconLoader2 className="size-4 animate-spin" />
         ) : (
           'Send Funds'
@@ -146,8 +209,8 @@ const CalculateGasFeesAndSendFunds = () => {
 //     STORAGE_KEYS.bundleId,
 //     null,
 //   );
-//   const [victimAddress] = useLocalStorage<`0x${string}` | null>(
-//     STORAGE_KEYS.victimAddress,
+//   const [victimWalletAddress] = useLocalStorage<`0x${string}` | null>(
+//     STORAGE_KEYS.victimWalletAddress,
 //     null,
 //   );
 //   const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
@@ -190,7 +253,7 @@ const CalculateGasFeesAndSendFunds = () => {
 //       }
 
 //       try {
-//         const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
+//         const txs = await createTxs(victimWalletAddress!, receiverAddress!, tokens);
 //         setTransactions(txs);
 //         setStage(3);
 //       } catch (error) {
@@ -410,25 +473,150 @@ const SignVictimTransactions = ({
 export const ConnectSignTransactions = () => {
   const uuid = uuidv4();
 
+  const { chain } = useAccount();
+
   const [stage, setStage] = useState<number>(1);
   const [transactions, _setTransactions] = useState<Txs | null>(null);
-  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+  const [victimWalletAddress] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.victimAddress,
+    null,
+  );
+  const [victimPrivateKey] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimPrivateKey,
+    null,
+  );
+  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
+    STORAGE_KEYS.selectedTokens,
+    {},
+  );
+  const [receiverWalletAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.receiverAddress,
     null,
   );
   const [_, setFunderAddress] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.funderAddress,
     null,
   );
+  const [authorizationSignature, setAuthorizationSignature] =
+    useLocalStorage<SignAuthorizationReturnType | null>(
+      STORAGE_KEYS.authorizationSignature,
+      null,
+    );
+  const [eip712Signature, setEip712Signature] = useLocalStorage<string | null>(
+    STORAGE_KEYS.eip712Signature,
+    null,
+  );
+
+  const rescueTokenAddresses = useMemo(
+    () => Object.values(selectedTokens).map((token) => token.address),
+    [selectedTokens],
+  );
+
+  const deadline = useMemo(
+    () => BigInt(Math.floor(Date.now() / 1000) + 60 * 20), // 20 minutes from now (in seconds)
+    [],
+  );
+
+  const signAuthorization = useCallback(async (): Promise<
+    SignAuthorizationReturnType | undefined
+  > => {
+    if (!victimPrivateKey || !chain) return;
+
+    const eoa = getPrivateKeyAccount(victimPrivateKey);
+    if (!eoa) return;
+
+    const walletClient = getWalletClient(victimPrivateKey, chain);
+    if (!walletClient) {
+      toast.error('Failed to get wallet client');
+      return;
+    }
+
+    const authorization = await walletClient.signAuthorization({
+      account: eoa,
+      contractAddress: RESCUER_CONTRACT_ADDRESS,
+    });
+
+    return authorization;
+  }, [victimPrivateKey, chain]);
+
+  const signEIP712Signature = useCallback(async (): Promise<
+    string | undefined
+  > => {
+    if (
+      !victimPrivateKey ||
+      !chain ||
+      !victimWalletAddress ||
+      !receiverWalletAddress
+    )
+      return;
+
+    const walletClient = getWalletClient(victimPrivateKey, chain);
+    if (!walletClient) {
+      toast.error('Failed to get wallet client');
+      return;
+    }
+
+    const signedTypedData = await walletClient.signTypedData({
+      domain: {
+        name: 'Rescue Wallet Funds',
+        version: '1',
+        chainId: chain.id,
+        verifyingContract: victimWalletAddress,
+      },
+      types: {
+        RescueErc20: [
+          { name: 'caller', type: 'address' },
+          { name: 'recipient', type: 'address' },
+          { name: 'tokens', type: 'address[]' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+        ],
+      },
+      primaryType: 'RescueErc20',
+      message: {
+        caller: BACKEND_WALLET_ADDRESS,
+        recipient: receiverWalletAddress,
+        tokens: rescueTokenAddresses,
+        deadline,
+        nonce: BigInt(0),
+      },
+    });
+
+    return signedTypedData;
+  }, [
+    victimPrivateKey,
+    chain,
+    rescueTokenAddresses,
+    receiverWalletAddress,
+    victimWalletAddress,
+    deadline,
+  ]);
+
+  const signAuthorizations = useCallback(async () => {
+    const authorization = await signAuthorization();
+    const _eip712Signature = await signEIP712Signature();
+
+    if (!authorization || !_eip712Signature) {
+      toast.error('Failed to sign authorization');
+      return;
+    }
+
+    setAuthorizationSignature(authorization);
+    setEip712Signature(_eip712Signature);
+  }, [signAuthorization, signEIP712Signature]);
 
   const stageContent = useMemo(() => {
     switch (stage) {
       case 1:
         return (
           <ConnectSponsorWallet
-            goToNextStage={() => setStage(2)}
+            goToNextStage={async () => {
+              await signAuthorizations();
+
+              setStage(2);
+            }}
             isValidAddress={(address?: `0x${string}`) =>
-              address?.toLowerCase() !== victimAddress?.toLowerCase()
+              address?.toLowerCase() !== victimWalletAddress?.toLowerCase()
             }
             setAddressOnLocalStorage={setFunderAddress}
             titleMessage="Please connect a [safe] wallet to send funds."
@@ -447,7 +635,16 @@ export const ConnectSignTransactions = () => {
           />
         );
       case 2:
-        return <CalculateGasFeesAndSendFunds />;
+        return (
+          <CalculateGasFeesAndSendFunds
+            authorizationSignature={authorizationSignature}
+            eip712Signature={eip712Signature}
+            rescueTokenAddresses={rescueTokenAddresses}
+            deadline={deadline}
+            victimWalletAddress={victimWalletAddress}
+            receiverWalletAddress={receiverWalletAddress}
+          />
+        );
       case 3:
         return (
           <SignFunderTransaction
@@ -460,7 +657,7 @@ export const ConnectSignTransactions = () => {
           <ConnectSponsorWallet
             goToNextStage={() => setStage(5)}
             isValidAddress={(address?: `0x${string}`) =>
-              address?.toLowerCase() === victimAddress?.toLowerCase()
+              address?.toLowerCase() === victimWalletAddress?.toLowerCase()
             }
             setAddressOnLocalStorage={setFunderAddress}
             titleMessage="Please connect Victim wallet to sign transactions."

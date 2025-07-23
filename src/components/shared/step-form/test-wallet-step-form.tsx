@@ -3,21 +3,15 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
-import { SignAuthorizationReturnType } from 'viem/actions';
-import { useAccount } from 'wagmi';
+// import { useAccount } from 'wagmi';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StageContext } from '@/context/stage-context';
 import { STORAGE_KEYS } from '@/lib/constants';
-import {
-  getPrivateKeyAccount,
-  getWalletAddressFromPrivateKey,
-  getWalletClient,
-} from '@/lib/utils';
+import { getWalletAddressFromPrivateKey } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 import { ITokenMetadata } from '@/types/tokens';
 
@@ -39,7 +33,7 @@ const getStepContent = (step: number) => {
 };
 
 export const TestWalletStepForm = () => {
-  const { chain } = useAccount();
+  // const { chain } = useAccount();
 
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
@@ -58,9 +52,10 @@ export const TestWalletStepForm = () => {
     STORAGE_KEYS.selectedTokens,
     {},
   );
-  const [victimWalletAddress, setVictimAddress] = useLocalStorage<
-    `0x${string}` | null
-  >(STORAGE_KEYS.victimAddress, null);
+  const [_vwa, setVictimAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimAddress,
+    null,
+  );
   const [_vpk, setVictimPrivateKey] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.victimPrivateKey,
     null,
@@ -86,74 +81,6 @@ export const TestWalletStepForm = () => {
     }
   }, [activeStep, isValid, selectedTokens]);
 
-  const signAuthorization = useCallback(async (): Promise<
-    SignAuthorizationReturnType | undefined
-  > => {
-    if (!victimPrivateKey || !chain) return;
-
-    const eoa = getPrivateKeyAccount(victimPrivateKey);
-    if (!eoa) return;
-
-    const walletClient = getWalletClient(victimPrivateKey, chain);
-    if (!walletClient) {
-      toast.error('Failed to get wallet client');
-      return;
-    }
-
-    const authorization = await walletClient.signAuthorization({
-      account: eoa,
-      contractAddress: '0xFBA3912Ca04dd458c843e2EE08967fC04f3579c2',
-    });
-
-    return authorization;
-  }, [victimPrivateKey, chain]);
-
-  const signEIP712Signature = useCallback(async (): Promise<
-    string | undefined
-  > => {
-    if (!victimPrivateKey || !chain || !victimWalletAddress) return;
-
-    const walletClient = getWalletClient(victimPrivateKey, chain);
-    if (!walletClient) {
-      toast.error('Failed to get wallet client');
-      return;
-    }
-
-    const signedTypedData = await walletClient.signTypedData({
-      domain: {
-        name: 'Rescue Wallet Funds',
-        version: '1',
-        chainId: chain.id,
-        verifyingContract: victimWalletAddress,
-      },
-      types: {
-        RescueErc20: [
-          { name: 'caller', type: 'address' },
-          { name: 'recipient', type: 'address' },
-          { name: 'tokens', type: 'address[]' },
-          { name: 'deadline', type: 'uint256' },
-          { name: 'nonce', type: 'uint256' },
-        ],
-      },
-      primaryType: 'RescueErc20',
-      message: {
-        caller: '0x0000000000000000000000000000000000000000', // backend wallet address
-        recipient: receiverWalletAddress,
-        tokens: Object.values(selectedTokens).map((token) => token.address),
-        deadline: BigInt(1000000000000000000),
-        nonce: BigInt(0),
-      },
-    });
-
-    return signedTypedData;
-  }, [
-    victimPrivateKey,
-    chain,
-    selectedTokens,
-    receiverWalletAddress,
-    victimWalletAddress,
-  ]);
-
   const handleNext = useCallback(async () => {
     if (
       (isValid && activeStep === 1 && Object.keys(selectedTokens).length > 0) ||
@@ -165,11 +92,6 @@ export const TestWalletStepForm = () => {
         setVictimAddress(victimWalletAddressFromPrivateKey);
         setVictimPrivateKey(victimPrivateKey);
         setReceiverAddress(receiverWalletAddress);
-
-        await signAuthorization();
-        await signEIP712Signature();
-
-        // TODO: Send this to backend
       }
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
     }
@@ -180,8 +102,6 @@ export const TestWalletStepForm = () => {
     selectedTokens,
     victimPrivateKey,
     receiverWalletAddress,
-    signAuthorization,
-    signEIP712Signature,
   ]);
 
   const handleBack = useCallback(() => {
