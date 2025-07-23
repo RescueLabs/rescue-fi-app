@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JsonRpcProvider } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 
-import { CHAIN_ID, RPC_URLS } from '@/lib/constants';
+import { CHAIN_ID, RPC_URLS } from '@/constants';
 import {
   getWalletAddressFromPrivateKey,
   validatePrivateKey,

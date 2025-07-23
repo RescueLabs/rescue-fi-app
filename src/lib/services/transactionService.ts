@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { GasTransactionData } from '../types/rescue';
+import { GasTransactionData } from '../../types/rescue';
 
 interface EtherscanTransaction {
   blockNumber: string;

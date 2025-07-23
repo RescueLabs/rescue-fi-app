@@ -1,6 +1,6 @@
 import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 
-import { ERC20_INTERFACE } from '@/lib/constants';
+import { ERC20_INTERFACE } from '@/constants';
 import { getPublicClient } from '@/lib/utils';
 import { Txs } from '@/types/transaction';
 

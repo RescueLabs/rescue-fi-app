@@ -3,8 +3,8 @@
 import React, { createContext, useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 
+import { ACCEPTED_CHAIN, CHAIN_ID } from '@/constants';
 import { useConnectedToFlashbotRpc } from '@/hooks/use-connected-to-flashbot-rpc';
-import { ACCEPTED_CHAIN, CHAIN_ID } from '@/lib/constants';
 
 export const RpcEnforcerContext = createContext<{
   checkIfConnectedtoFlashbotRpc: () => Promise<boolean>;

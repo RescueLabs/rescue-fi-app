@@ -15,9 +15,9 @@ import {
   SignAuthorizationReturnType,
 } from 'viem/accounts';
 
-import { getRpcUrl, getNetworkConfig } from '../config/networks';
-import { getMode } from '../config/supabase';
-import rescurooorAbi from '../constants/abis/rescurooor.json';
+import { getRpcUrl, getNetworkConfig } from '../../configs/networks';
+import { getMode } from '../../configs/supabase';
+import rescurooorAbi from '../../constants/abis/rescurooor.json';
 
 /**
  * Web3Service with chain-specific wallet clients

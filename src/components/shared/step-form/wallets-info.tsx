@@ -18,9 +18,9 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
+import { STORAGE_KEYS } from '@/constants';
 import { useDetectTokens } from '@/hooks/use-detect-tokens';
 import { useTokenDetails } from '@/hooks/use-token-details';
-import { STORAGE_KEYS } from '@/lib/constants';
 import {
   cn,
   getWalletAddressFromPrivateKey,

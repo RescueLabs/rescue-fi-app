@@ -13,16 +13,16 @@ import { useAccount, useEstimateGas, useSendTransaction } from 'wagmi';
 import { LoadingSigning } from '@/components/shared/icons/loading-signing';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ACCEPTED_CHAIN_MAP, STORAGE_KEYS } from '@/constants';
+import RESCUER_ABI from '@/constants/abis/rescuer.json';
 import { useStageContext } from '@/context/stage-context';
 import { useEffectOnce } from '@/hooks/use-effect-once';
 import {
-  BACKEND_WALLET_ADDRESS,
-  CHAIN_ID,
-  RESCUER_CONTRACT_ADDRESS,
-  STORAGE_KEYS,
-} from '@/lib/constants';
-import RESCUER_ABI from '@/lib/constants/abis/rescuer.json';
-import { getPrivateKeyAccount, getWalletClient } from '@/lib/utils';
+  deserializeBigInt,
+  getPrivateKeyAccount,
+  getWalletClient,
+  serializeBigInt,
+} from '@/lib/utils';
 import { ITokenMetadata } from '@/types/tokens';
 import { Tx, Txs } from '@/types/transaction';
 
@@ -73,18 +73,21 @@ const ConnectSponsorWallet = ({
           showBalance={false}
         />
 
-        {isConnected && isValidAddress(address) && CHAIN_ID === chainId && (
-          <Button
-            className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-            onClick={() => {
-              setAddressOnLocalStorage(address!);
-              goToNextStage();
-            }}
-            type="button"
-          >
-            Confirm
-          </Button>
-        )}
+        {isConnected &&
+          isValidAddress(address) &&
+          chainId &&
+          ACCEPTED_CHAIN_MAP.has(chainId) && (
+            <Button
+              className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+              onClick={() => {
+                setAddressOnLocalStorage(address!);
+                goToNextStage();
+              }}
+              type="button"
+            >
+              Confirm
+            </Button>
+          )}
 
         {isConnected && !isValidAddress(address) && (
           <p className="w-fit text-sm text-red-500 hover:text-red-600 dark:text-red-600 dark:hover:text-red-700">
@@ -126,18 +129,23 @@ const CalculateGasFeesAndSendFunds = ({
     [],
   );
 
-  const { data: rescueErc20Gas, isLoading: isRescueErc20GasLoading } =
-    useEstimateGas({
-      authorizationList: [authorizationSignature!],
-      data: rescueErc20Data,
-      to: victimWalletAddress!,
-      query: {
-        enabled:
-          !!victimWalletAddress &&
-          !!authorizationSignature &&
-          !!rescueErc20Data,
-      },
-    });
+  console.log(rescueErc20Data, victimWalletAddress, authorizationSignature);
+
+  const {
+    data: rescueErc20Gas,
+    isLoading: isRescueErc20GasLoading,
+    error,
+  } = useEstimateGas({
+    authorizationList: [authorizationSignature!],
+    data: rescueErc20Data,
+    to: victimWalletAddress!,
+    query: {
+      enabled:
+        !!victimWalletAddress && !!authorizationSignature && !!rescueErc20Data,
+    },
+  });
+
+  console.log(rescueErc20Gas, error);
 
   const { sendTransactionAsync, isPending: isSendingRescueErc20Gas } =
     useSendTransaction();
@@ -160,7 +168,7 @@ const CalculateGasFeesAndSendFunds = ({
               The amount of gas fees is{' '}
               <span className="font-bold text-purple-500">
                 {isRescueErc20GasLoading ? (
-                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="mr-1 inline-block h-4 w-8" />
                 ) : (
                   rescueErc20Gas
                 )}
@@ -176,7 +184,7 @@ const CalculateGasFeesAndSendFunds = ({
         className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
         onClick={() => {
           sendTransactionAsync({
-            to: BACKEND_WALLET_ADDRESS,
+            to: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
             data: rescueErc20Data,
             value: rescueErc20Gas
               ? rescueErc20Gas + rescueErc20Gas * BigInt(0.2) // 20% buffer
@@ -501,6 +509,10 @@ export const ConnectSignTransactions = () => {
     useLocalStorage<SignAuthorizationReturnType | null>(
       STORAGE_KEYS.authorizationSignature,
       null,
+      {
+        serializer: (value) => serializeBigInt(value),
+        deserializer: (value) => deserializeBigInt(value),
+      },
     );
   const [eip712Signature, setEip712Signature] = useLocalStorage<string | null>(
     STORAGE_KEYS.eip712Signature,
@@ -533,7 +545,7 @@ export const ConnectSignTransactions = () => {
 
     const authorization = await walletClient.signAuthorization({
       account: eoa,
-      contractAddress: RESCUER_CONTRACT_ADDRESS,
+      contractAddress: process.env.RESCUROOOR_CONTRACT_ADDRESS as `0x${string}`,
     });
 
     return authorization;
@@ -550,18 +562,15 @@ export const ConnectSignTransactions = () => {
     )
       return;
 
-    const walletClient = getWalletClient(victimPrivateKey, chain);
-    if (!walletClient) {
-      toast.error('Failed to get wallet client');
-      return;
-    }
+    const eoa = getPrivateKeyAccount(victimPrivateKey);
+    if (!eoa) return;
 
-    const signedTypedData = await walletClient.signTypedData({
+    const signedTypedData = await eoa.signTypedData({
       domain: {
         name: 'Rescue Wallet Funds',
         version: '1',
         chainId: chain.id,
-        verifyingContract: victimWalletAddress,
+        verifyingContract: eoa.address,
       },
       types: {
         RescueErc20: [
@@ -574,7 +583,7 @@ export const ConnectSignTransactions = () => {
       },
       primaryType: 'RescueErc20',
       message: {
-        caller: BACKEND_WALLET_ADDRESS,
+        caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
         recipient: receiverWalletAddress,
         tokens: rescueTokenAddresses,
         deadline,
@@ -593,15 +602,15 @@ export const ConnectSignTransactions = () => {
   ]);
 
   const signAuthorizations = useCallback(async () => {
-    const authorization = await signAuthorization();
+    const _authorization = await signAuthorization();
     const _eip712Signature = await signEIP712Signature();
 
-    if (!authorization || !_eip712Signature) {
+    if (!_authorization || !_eip712Signature) {
       toast.error('Failed to sign authorization');
       return;
     }
 
-    setAuthorizationSignature(authorization);
+    setAuthorizationSignature(_authorization);
     setEip712Signature(_eip712Signature);
   }, [signAuthorization, signEIP712Signature]);
 
@@ -682,7 +691,7 @@ export const ConnectSignTransactions = () => {
         return 'Unknown stage';
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, uuid]);
+  }, [stage, uuid, authorizationSignature, eip712Signature]);
 
   return (
     <div className="flex flex-col gap-8">

@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import { ethers, JsonRpcProvider } from 'ethers';
 
-import { RPC_URLS, RELAY_URLS, CHAIN_ID } from '@/lib/constants';
+import { RPC_URLS, RELAY_URLS, CHAIN_ID } from '@/constants';
 import { getPublicClient } from '@/lib/utils';
 
 const authSigner = ethers.Wallet.createRandom();

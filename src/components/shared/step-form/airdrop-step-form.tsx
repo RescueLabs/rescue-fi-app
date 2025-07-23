@@ -7,16 +7,17 @@ import { parseUnits } from 'ethers';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ERC20_INTERFACE, STORAGE_KEYS } from '@/constants';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useGasPrice } from '@/hooks/use-gas-Price';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
-import { ERC20_INTERFACE } from '@/lib/constants';
 import {
   getPrivateKeyAccount,
   getPublicClient,
@@ -51,6 +52,10 @@ export const AirdropStepForm = () => {
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
+  const [victimWalletAddress] = useLocalStorage<string>(
+    STORAGE_KEYS.victimAddress,
+    '',
+  );
 
   const [
     tokenAddress,
@@ -166,7 +171,7 @@ export const AirdropStepForm = () => {
 
       const tokenDetails = await getTokenDetails(
         tokenAddress,
-        formData.victimWalletAddress,
+        victimWalletAddress,
         formData.receiverWalletAddress,
       );
 

@@ -1,4 +1,5 @@
 import { Onest } from 'next/font/google';
+import { headers } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
@@ -55,40 +56,44 @@ const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) => (
-  <html lang="en" suppressHydrationWarning>
-    <head />
-    <body className={cn(onest.variable)}>
-      <NextTopLoader showSpinner={false} color="#a855f7" />
-      <RainbowKitClientProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <SidebarProvider>
-            <RpcEnforcerProvider>
-              <ScrollArea className="h-screen w-screen">
-                <div className="w-full bg-transparent px-0 py-0 md:p-4">
-                  <div
-                    className={cn(
-                      'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
-                    )}
-                  >
-                    <DashboardSidebar />
-                    <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
-                      {/* <ConnectWalletButton /> */}
+}>) => {
+  const cookie = headers().get('cookie') ?? '';
 
-                      {children}
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className={cn(onest.variable)}>
+        <NextTopLoader showSpinner={false} color="#a855f7" />
+        <RainbowKitClientProvider cookie={cookie}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <SidebarProvider>
+              <RpcEnforcerProvider>
+                <ScrollArea className="h-screen w-screen">
+                  <div className="w-full bg-transparent px-0 py-0 md:p-4">
+                    <div
+                      className={cn(
+                        'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
+                      )}
+                    >
+                      <DashboardSidebar />
+                      <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                        {/* <ConnectWalletButton /> */}
 
-                      <Footer />
-                    </main>
+                        {children}
+
+                        <Footer />
+                      </main>
+                    </div>
                   </div>
-                </div>
-              </ScrollArea>
-            </RpcEnforcerProvider>
-          </SidebarProvider>
-        </ThemeProvider>
-      </RainbowKitClientProvider>
-      <Toaster />
-    </body>
-  </html>
-);
+                </ScrollArea>
+              </RpcEnforcerProvider>
+            </SidebarProvider>
+          </ThemeProvider>
+        </RainbowKitClientProvider>
+        <Toaster />
+      </body>
+    </html>
+  );
+};
 
 export default RootLayout;

@@ -6,13 +6,16 @@ interface RescueTokenContextType {
 }
 
 export const RescueTokenContext = createContext<RescueTokenContextType>({
-  setStage: () => {},
+  rescueTokenAddresses: [],
+  setRescueTokenAddresses: () => {},
 });
 
-export const useStageContext = () => {
-  const context = useContext(StageContext);
+export const useRescueTokenContext = () => {
+  const context = useContext(RescueTokenContext);
   if (!context) {
-    throw new Error('useStageContext must be used within a StageProvider');
+    throw new Error(
+      'useRescueTokenContext must be used within a RescueTokenProvider',
+    );
   }
   return context;
 };

@@ -6,7 +6,7 @@ import { Web3Service, web3Service } from '@/lib/services/web3';
 import { EtherscanMutex } from '@/lib/utils/etherscanMutex';
 import { RescueMutex } from '@/lib/utils/rescueMutex';
 
-import type { RescueRequest } from '@/lib/types/rescue';
+import type { RescueRequest } from '@/types/rescue';
 
 // Global mutex map for each compromised address
 const rescueMutexes: Map<string, RescueMutex> = new Map();

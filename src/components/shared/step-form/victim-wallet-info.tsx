@@ -6,8 +6,8 @@ import { useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-input';
-import { RPC_URLS, CHAIN_ID } from '@/lib/constants';
-import ERC20_ABI from '@/lib/constants/abis/erc20.json';
+import { RPC_URLS, CHAIN_ID } from '@/constants';
+import ERC20_ABI from '@/constants/abis/erc20.json';
 import {
   getWalletAddressFromPrivateKey,
   validateTokenAddress,

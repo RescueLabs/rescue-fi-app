@@ -1,15 +1,25 @@
 import { Interface } from 'ethers';
-import { sepolia, mainnet } from 'viem/chains';
+import {
+  sepolia,
+  mainnet,
+  optimismSepolia,
+  optimism,
+  base,
+  bsc,
+  arbitrum,
+  bscTestnet,
+  baseSepolia,
+  arbitrumSepolia,
+  Chain,
+} from 'viem/chains';
 
 import {
   getSepoliaMevShareClient,
   getEthereumMevShareClient,
-} from '../flashbots';
+} from '../lib/flashbots';
 
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK;
 
-// Seplia: 11155111
-// Mainnet: 1
 export const CHAIN_IDS = {
   mainnet: 1,
   sepolia: 11155111,
@@ -96,8 +106,20 @@ export const STORAGE_KEYS = {
   airdropCallData: 'rescuefi-airdropCallData',
 };
 
-export const RESCUER_CONTRACT_ADDRESS =
-  '0xf25AC6Da051F8a3EDdC5fE91943D62183b7DCa47';
-
 export const BACKEND_WALLET_ADDRESS =
   '0x0000000000000000000000000000000000000000';
+
+export const TEST_CHAINS = [
+  sepolia,
+  arbitrumSepolia,
+  bscTestnet,
+  baseSepolia,
+  optimismSepolia,
+];
+
+export const MAINNET_CHAINS = [mainnet, arbitrum, bsc, base, optimism];
+
+export const CHAINS: Chain[] =
+  process.env.NODE_ENV === 'production' ? MAINNET_CHAINS : TEST_CHAINS;
+
+export const ACCEPTED_CHAIN_MAP = new Set(CHAINS.map((chain) => chain.id));

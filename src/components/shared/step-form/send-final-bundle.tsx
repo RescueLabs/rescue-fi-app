@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
+import { NETWORK, STORAGE_KEYS } from '@/constants';
 import { useBundle } from '@/hooks/use-bundle';
-import { NETWORK, STORAGE_KEYS } from '@/lib/constants';
 import { ITokenMetadata } from '@/types/tokens';
 
 import { FormRescueFundsLoading } from './form-rescue-funds-loading';

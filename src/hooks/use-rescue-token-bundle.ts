@@ -9,7 +9,7 @@ import {
   ZERO_ADDRESS,
   CHAIN_ID,
   ERC20_INTERFACE,
-} from '@/lib/constants';
+} from '@/constants';
 
 import {
   getPrivateKeyAccount,

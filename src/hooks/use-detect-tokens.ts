@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { encodeFunctionData, formatUnits, fromHex, isAddress } from 'viem';
 
-import ERC20_ABI from '@/lib/constants/abis/erc20.json';
+import ERC20_ABI from '@/constants/abis/erc20.json';
 import { ITokenMetadata } from '@/types/tokens';
 
 export const useDetectTokens = () => {

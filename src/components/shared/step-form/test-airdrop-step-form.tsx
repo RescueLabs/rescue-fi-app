@@ -11,12 +11,12 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ERC20_INTERFACE } from '@/constants';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useGasPrice } from '@/hooks/use-gas-Price';
 import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
-import { ERC20_INTERFACE } from '@/lib/constants';
 import {
   getPrivateKeyAccount,
   getPublicClient,
