@@ -9,11 +9,11 @@ import rescuroorAbi from '@/lib/constants/abis/rescurooor.json';
 import { web3Service } from '@/lib/services/web3';
 
 const compromisedKey =
-  '0x380c64ec8bb228fe5885da71c111ebb08b033bf1e22e1d1b0c507083239bda7b';
+  '0x42bce5e31f0a9955a02287a1aa838f4ce312ac28273f108a065107c0bf9b811d';
 const eoa = privateKeyToAccount(compromisedKey, { nonceManager });
 
 async function signStuff() {
-  const chainId = 97;
+  const chainId = 11155111;
   const walletClient = web3Service.getWalletClient(chainId);
   const publicClient = web3Service.getPublicClient(chainId);
 
@@ -34,10 +34,14 @@ async function signStuff() {
       abi: rescuroorAbi,
       client: publicClient,
     });
-    console.log('rescuroorDelegate', rescuroorDelegate.address);
-    console.log('eoa', eoa.address);
+    // Seems Alchemy caches call responses so we add the block number to the call
+    const blockNumber = await publicClient.getBlockNumber({
+      cacheTime: 0,
+    });
+    console.log('blockNumber', blockNumber);
     nonce = (await rescuroorDelegate.read.nonces([eoa.address], {
-      blockTag: 'latest',
+      blockNumber,
+      blockTag: 'pending',
     })) as bigint;
   }
 
@@ -64,7 +68,33 @@ async function signStuff() {
     message: {
       caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
       recipient: '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E',
-      tokens: ['0x21B1c11d5e7f6B8Cd07be8886b196319fc69e558'],
+      tokens: ['0xf80d04a23fe771dae8d79a4005ffa42b7a6568f2'],
+      deadline: BigInt(5555555555555555),
+      nonce,
+    },
+  });
+
+  console.log({
+    domain: {
+      name: 'Rescuerooor',
+      version: '1',
+      chainId,
+      verifyingContract: eoa.address,
+    },
+    types: {
+      RescueErc20: [
+        { name: 'caller', type: 'address' },
+        { name: 'recipient', type: 'address' },
+        { name: 'tokens', type: 'address[]' },
+        { name: 'deadline', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+      ],
+    },
+    primaryType: 'RescueErc20',
+    message: {
+      caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
+      recipient: '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E',
+      tokens: ['0xf80d04a23fe771dae8d79a4005ffa42b7a6568f2'],
       deadline: BigInt(5555555555555555),
       nonce,
     },

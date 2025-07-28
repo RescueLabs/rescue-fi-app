@@ -18,6 +18,7 @@ import {
 import { getRpcUrl, getNetworkConfig } from '../config/networks';
 import { getMode } from '../config/supabase';
 import rescurooorAbi from '../constants/abis/rescurooor.json';
+import { calculateEIP1559Fees } from '../utils/gas';
 
 /**
  * Web3Service with chain-specific wallet clients
@@ -334,17 +335,21 @@ export class Web3Service {
   public async gasToEth(
     gasUnits: bigint,
     chainId: number,
-  ): Promise<{ gasInEth: bigint; priorityFee: bigint }> {
+  ): Promise<{
+    gasInEth: bigint;
+    maxPriorityFeePerGas: bigint;
+    maxFeePerGas: bigint;
+  }> {
     const publicClient = this.getPublicClient(chainId);
-    const { maxFeePerGas, maxPriorityFeePerGas } =
-      await publicClient.estimateFeesPerGas();
 
-    console.log('maxFeePerGas', maxFeePerGas);
-    console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
+    // Use the centralized EIP-1559 fee calculation
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await calculateEIP1559Fees(publicClient);
 
     return {
       gasInEth: gasUnits * maxFeePerGas,
-      priorityFee: maxPriorityFeePerGas,
+      maxPriorityFeePerGas,
+      maxFeePerGas,
     };
   }
 
