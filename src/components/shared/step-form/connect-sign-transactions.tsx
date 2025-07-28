@@ -129,23 +129,19 @@ const CalculateGasFeesAndSendFunds = ({
     [],
   );
 
-  console.log(rescueErc20Data, victimWalletAddress, authorizationSignature);
-
-  const {
-    data: rescueErc20Gas,
-    isLoading: isRescueErc20GasLoading,
-    error,
-  } = useEstimateGas({
-    authorizationList: [authorizationSignature!],
-    data: rescueErc20Data,
-    to: victimWalletAddress!,
-    query: {
-      enabled:
-        !!victimWalletAddress && !!authorizationSignature && !!rescueErc20Data,
-    },
-  });
-
-  console.log(rescueErc20Gas, error);
+  const { data: rescueErc20Gas, isLoading: isRescueErc20GasLoading } =
+    useEstimateGas({
+      authorizationList: [authorizationSignature!],
+      data: rescueErc20Data,
+      account: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
+      to: victimWalletAddress!,
+      query: {
+        enabled:
+          !!victimWalletAddress &&
+          !!authorizationSignature &&
+          !!rescueErc20Data,
+      },
+    });
 
   const { sendTransactionAsync, isPending: isSendingRescueErc20Gas } =
     useSendTransaction();
@@ -565,9 +561,9 @@ export const ConnectSignTransactions = () => {
     const eoa = getPrivateKeyAccount(victimPrivateKey);
     if (!eoa) return;
 
-    const signedTypedData = await eoa.signTypedData({
+    console.log('obj', {
       domain: {
-        name: 'Rescue Wallet Funds',
+        name: 'Rescuerooor',
         version: '1',
         chainId: chain.id,
         verifyingContract: eoa.address,
@@ -586,7 +582,33 @@ export const ConnectSignTransactions = () => {
         caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
         recipient: receiverWalletAddress,
         tokens: rescueTokenAddresses,
-        deadline,
+        deadline: BigInt(1e18),
+        nonce: BigInt(0),
+      },
+    });
+
+    const signedTypedData = await eoa.signTypedData({
+      domain: {
+        name: 'Rescuerooor',
+        version: '1',
+        chainId: chain.id,
+        verifyingContract: eoa.address,
+      },
+      types: {
+        RescueErc20: [
+          { name: 'caller', type: 'address' },
+          { name: 'recipient', type: 'address' },
+          { name: 'tokens', type: 'address[]' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+        ],
+      },
+      primaryType: 'RescueErc20',
+      message: {
+        caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
+        recipient: receiverWalletAddress,
+        tokens: rescueTokenAddresses,
+        deadline: BigInt(1e18),
         nonce: BigInt(0),
       },
     });
