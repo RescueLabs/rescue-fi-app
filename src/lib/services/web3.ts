@@ -341,17 +341,19 @@ export class Web3Service {
     gasInEth: bigint;
     maxPriorityFeePerGas: bigint;
     maxFeePerGas: bigint;
+    baseFee: bigint;
   }> {
     const publicClient = this.getPublicClient(chainId);
 
     // Use the centralized EIP-1559 fee calculation
-    const { maxFeePerGas, maxPriorityFeePerGas } =
+    const { maxFeePerGas, maxPriorityFeePerGas, baseFee } =
       await calculateEIP1559Fees(publicClient);
 
     return {
       gasInEth: gasUnits * maxFeePerGas,
       maxPriorityFeePerGas,
       maxFeePerGas,
+      baseFee,
     };
   }
 

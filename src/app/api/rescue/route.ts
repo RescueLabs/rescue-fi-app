@@ -543,7 +543,7 @@ export async function POST(request: NextRequest) {
     );
     const remainingEth = BigInt(gasSummary.remaining_eth);
 
-    // 6. Estimate gas for rescue transaction
+    // 6. Execute rescue transaction
     try {
       const {
         rescueTxHash,

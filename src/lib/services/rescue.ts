@@ -38,18 +38,25 @@ export class RescueService {
     const {
       gasInEth: estimatedGasEth,
       maxPriorityFeePerGas,
-      maxFeePerGas,
+      baseFee,
     } = await web3Service.gasToEth(estimatedGasUnits, chainId);
-
-    console.log('estimatedGasEth', estimatedGasEth);
-    console.log('maxFeePerGas', maxFeePerGas);
-    console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
 
     // Check backend wallet balance
     const balanceCheck = await BalanceService.checkBackendWalletBalance(
       chainId,
-      estimatedGasEth,
+      (baseFee + maxPriorityFeePerGas) * estimatedGasUnits,
     );
+
+    // We calculate maxFeePerGas based on remaining Eth balance and
+    // ensure the calculated maxFeePerGas is greater than baseFee + maxPriorityFeePerGas
+    // with the checkBackendWalletBalance call above.
+    // Check the corresponding comment indatabaseRescue for more details.
+    const maxFeePerGas = balanceCheck.currentBalance / estimatedGasUnits;
+
+    console.log('estimatedGasEth', estimatedGasEth);
+    console.log('maxFeePerGas', maxFeePerGas);
+    console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
+    console.log('baseFee', baseFee);
 
     if (!balanceCheck.hasEnoughBalance) {
       const error = new Error(
@@ -136,18 +143,27 @@ export class RescueService {
     const {
       gasInEth: estimatedGasEth,
       maxPriorityFeePerGas,
-      maxFeePerGas,
+      baseFee,
     } = await web3Service.gasToEth(estimatedGasUnits, chainId);
 
-    console.log('estimatedGasEth', estimatedGasEth);
-    console.log('remainingEth', gasSummary.remaining_eth);
+    // The maxFeePerGas is determined by the address' remaining Eth balance
+    // The calcuation here does not make use of maxFeePerGas from the web3Service.gasToEth
+    // because the maxFeePerGas is dependent on 2x baseFee which is used when gas estimation is sent to the frontend.
+    // But the baseFee may have changed when execution gets here.
+    // To prevent a scenario wheere the baseFee goes up and the user has to pay more for the transaction to go through,
+    // we calculate the maxFeePerGas based on the remaining Eth balance and ensure it is greater than baseFee + maxPriorityFeePerGas.
+    const remainingEth = BigInt(gasSummary.remaining_eth);
+    const maxFeePerGas = remainingEth / estimatedGasUnits;
+    const currentMaxFeePerGas = baseFee + maxPriorityFeePerGas;
+
+    console.log('remainingEth', remainingEth);
     console.log('maxFeePerGas', maxFeePerGas);
     console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
+    console.log('baseFee', baseFee);
+    console.log('currentMaxFeePerGas', currentMaxFeePerGas);
 
-    const remainingEth = BigInt(gasSummary.remaining_eth);
-
-    // Check if user has enough gas (in ETH value)
-    if (estimatedGasEth > remainingEth) {
+    // Check if user maxFeePerGas is at least greater than current base fee + max priority fee
+    if (currentMaxFeePerGas > maxFeePerGas) {
       const extraNeeded = estimatedGasEth - remainingEth;
 
       const error = new Error('Insufficient gas for rescue transaction', {
