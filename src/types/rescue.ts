@@ -56,3 +56,10 @@ export interface LastBlockRecord {
   last_block: number;
   updated_at: string;
 }
+
+export interface CustomGasError {
+  type: string;
+  extraGasEthNeeded: bigint;
+  estimatedGasEth: bigint;
+  remainingEth: bigint;
+}

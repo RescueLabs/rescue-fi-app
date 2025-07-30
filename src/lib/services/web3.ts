@@ -15,10 +15,10 @@ import {
   SignAuthorizationReturnType,
 } from 'viem/accounts';
 
-import { getRpcUrl, getNetworkConfig } from '@/configs/networks';
-import { getMode } from '@/configs/supabase';
-import rescurooorAbi from '@/constants/abis/rescurooor.json';
-import { calculateEIP1559Fees } from '@/lib/utils/gas';
+import { getRpcUrl, getNetworkConfig } from '../../configs/networks';
+import { getMode, AppMode } from '../../configs/supabase';
+import rescurooorAbi from '../../constants/abis/rescurooor.json';
+import { calculateEIP1559Fees } from '../utils/gas';
 
 /**
  * Web3Service with chain-specific wallet clients
@@ -43,7 +43,7 @@ export class Web3Service {
 
   private walletClients: Map<number, WalletClient> = new Map();
 
-  private mode: 'production' | 'test';
+  private mode: AppMode;
 
   private account: ReturnType<typeof privateKeyToAccount> | null = null;
 
@@ -64,22 +64,24 @@ export class Web3Service {
 
     // Initialize public and wallet clients for each chain
     Object.entries(networks).forEach(([name, chain]) => {
-      const rpcUrl = getRpcUrl(name, this.mode);
+      if (chain && typeof chain === 'object' && 'id' in chain) {
+        const rpcUrl = getRpcUrl(name, this.mode);
 
-      // Create public client for this chain
-      const publicClient = createPublicClient({
-        chain,
-        transport: http(rpcUrl),
-      });
-      this.publicClients.set(chain.id, publicClient as PublicClient);
+        // Create public client for this chain
+        const publicClient = createPublicClient({
+          chain: chain as any,
+          transport: http(rpcUrl),
+        });
+        this.publicClients.set(chain.id, publicClient as PublicClient);
 
-      // Create wallet client for this chain (shares the same account)
-      const walletClient = createWalletClient({
-        account: this.account!,
-        transport: http(rpcUrl),
-        chain,
-      });
-      this.walletClients.set(chain.id, walletClient);
+        // Create wallet client for this chain (shares the same account)
+        const walletClient = createWalletClient({
+          account: this.account!,
+          transport: http(rpcUrl),
+          chain: chain as any,
+        });
+        this.walletClients.set(chain.id, walletClient);
+      }
     });
   }
 
@@ -154,14 +156,6 @@ export class Web3Service {
       s: s as `0x${string}`,
       yParity: v,
     };
-  }
-
-  public static formatAuthorization(
-    authorization: SignAuthorizationReturnType,
-  ): string {
-    return `${
-      (authorization?.r || '') + (authorization?.s.slice(2) || '')
-    }0${authorization?.yParity?.toString(16) || ''}`;
   }
 
   public async estimateGasForRescue(

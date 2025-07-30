@@ -1,11 +1,11 @@
-import { supabase } from '../../configs/supabase';
+import { supabase } from '@/configs/supabase';
 
 import type {
   GasPayment,
   RescueTransaction,
   GasSummary,
   LastBlockRecord,
-} from '../../types/rescue';
+} from '@/types/rescue';
 
 export class DatabaseService {
   // Gas Payment Operations

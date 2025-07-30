@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getMode, shouldUseDatabase } from '@/configs/supabase';
 import { DatabaseService } from '@/lib/services/database';
+import { RescueService } from '@/lib/services/rescue';
 import { TransactionService } from '@/lib/services/transactionService';
-import { Web3Service, web3Service } from '@/lib/services/web3';
+import { web3Service, Web3Service } from '@/lib/services/web3';
 import { EtherscanMutex } from '@/lib/utils/etherscanMutex';
 import { RescueMutex } from '@/lib/utils/rescueMutex';
 
-import type { RescueRequest } from '@/types/rescue';
+import type { CustomGasError, RescueRequest } from '@/types/rescue';
 
 // Global mutex map for each compromised address
 const rescueMutexes: Map<string, RescueMutex> = new Map();
@@ -192,17 +194,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // validate authorization format
-    if (authorization && !/^0x[a-fA-F0-9]{130}$/.test(authorization)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid authorization format',
-        },
-        { status: 400 },
-      );
-    }
-
     // Validate nonce
     if (authorization && (typeof nonce !== 'number' || nonce < 0)) {
       return NextResponse.json(
@@ -263,8 +254,92 @@ export async function POST(request: NextRequest) {
     console.log(`Acquired rescue mutex for address: ${compromisedAddress}`);
 
     console.log(
-      `Processing rescue for address: ${compromisedAddress} on chain:${chainId} ${nonce ? ` with nonce: ${nonce}` : '.'}`,
+      `Processing rescue for address: ${compromisedAddress} on chain:${chainId} ${nonce ? ` with nonce: ${nonce}` : '.'} in mode: ${getMode()}`,
     );
+
+    // Mode-specific processing
+    const currentMode = getMode();
+
+    if (currentMode === 'local') {
+      try {
+        const { rescueTxHash, ethUsed, status } =
+          await RescueService.localRescue(
+            chainId,
+            compromisedAddress as `0x${string}`,
+            receiverWallet as `0x${string}`,
+            tokens as `0x${string}`[],
+            deadline.toString(),
+            eip712Signature as `0x${string}`,
+            authorization as `0x${string}`,
+            nonce,
+          );
+
+        if (status === 'success') {
+          return NextResponse.json({
+            success: true,
+            data: {
+              rescueTransactionHash: rescueTxHash,
+              gasUsed: Web3Service.formatEther(ethUsed),
+              status: 'success',
+              mode: 'local',
+            },
+          });
+        }
+
+        return NextResponse.json({
+          success: false,
+          error: 'Rescue transaction failed',
+          data: {
+            rescueTransactionHash: rescueTxHash,
+            gasUsed: Web3Service.formatEther(ethUsed),
+            status: 'failed',
+            mode: 'local',
+          },
+        });
+      } catch (error) {
+        const cause: CustomGasError | undefined = (error as Error)
+          ?.cause as CustomGasError;
+        if (cause) {
+          console.error((error as Error).message);
+          const {
+            extraGasEthNeeded,
+            estimatedGasEth,
+            remainingEth: _remainingEth,
+          } = cause;
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Insufficient gas for rescue transaction',
+              extraGasEthNeeded: Web3Service.formatEther(extraGasEthNeeded), // ETH value needed to complete the transaction
+              estimatedGasEth: Web3Service.formatEther(estimatedGasEth), // ETH value estimated for the transaction
+              remainingEth: Web3Service.formatEther(_remainingEth), // ETH value remaining in the wallet
+            },
+            { status: 400 },
+          );
+        }
+
+        console.error('Error executing local rescue transaction:', error);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to execute local rescue transaction',
+          },
+          { status: 500 },
+        );
+      }
+    }
+
+    // Database mode: Continue with normal database operations
+    if (!shouldUseDatabase(currentMode)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database operations not supported in current mode',
+        },
+        { status: 500 },
+      );
+    }
 
     // 1. Fetch all gas payments since the last processed block
     // Acquire chain-specific mutex for gas payment processing
@@ -470,100 +545,25 @@ export async function POST(request: NextRequest) {
 
     // 6. Estimate gas for rescue transaction
     try {
-      let estimatedGasUnits = await web3Service.estimateGasForRescue(
-        chainId,
-        compromisedAddress as `0x${string}`,
-        receiverWallet as `0x${string}`,
-        tokens as `0x${string}`[],
-        BigInt(deadline),
-        eip712Signature as `0x${string}`,
-        (authorization as `0x${string}`) || '',
-        Number(nonce || 0),
-      );
-
-      console.log('estimatedGasUnits', estimatedGasUnits);
-      estimatedGasUnits = (estimatedGasUnits * BigInt(110)) / BigInt(100);
-      console.log('estimatedGasUnits', estimatedGasUnits);
-
-      // Convert gas units to ETH value using Blocknative's EIP-1559 formula
       const {
-        gasInEth: estimatedGasEth,
-        maxPriorityFeePerGas,
-        maxFeePerGas,
-      } = await web3Service.gasToEth(estimatedGasUnits, chainId);
-
-      console.log('estimatedGasEth', estimatedGasEth);
-      console.log('remainingEth', remainingEth);
-      console.log('maxFeePerGas', maxFeePerGas);
-      console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
-
-      // Check if user has enough gas (in ETH value)
-      if (estimatedGasEth > remainingEth) {
-        const extraNeeded = estimatedGasEth - remainingEth;
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Insufficient gas for rescue transaction',
-            extraGasNeeded: Web3Service.formatEther(extraNeeded),
-            estimatedGas: Web3Service.formatEther(estimatedGasEth),
-            remainingEth: Web3Service.formatEther(remainingEth),
-          },
-          { status: 400 },
-        );
-      }
-
-      // 7. Create rescue transaction record with pending status
-      rescueTransaction = await DatabaseService.createRescueTransaction({
-        compromised_address: compromisedAddress.toLowerCase(),
-        receiver_address: receiverWallet.toLowerCase(),
-        tokens: tokens.map((t) => t.toLowerCase()),
-        gas_transaction_hash: gasTransactionHash || '',
-        rescue_transaction_hash: '', // Will be updated after transaction
-        gas_used: '0', // Will be updated after transaction
-        eth_used: '0', // Will be updated after transaction
-        chain_id: chainId,
-        deadline,
-        status: 'pending',
-      });
-
-      // 8. Execute rescue transaction
-      const rescueTxHash = await web3Service.sendRescueTransaction(
+        rescueTxHash,
+        ethUsed,
+        status,
+        rescueTransaction: _rescueTransaction,
+      } = await RescueService.databaseRescue(
         chainId,
         compromisedAddress as `0x${string}`,
         receiverWallet as `0x${string}`,
         tokens as `0x${string}`[],
-        BigInt(deadline),
+        deadline.toString(),
         eip712Signature as `0x${string}`,
-        (authorization as `0x${string}`) || '',
-        Number(nonce || 0),
-        estimatedGasUnits,
-        maxFeePerGas,
-        maxPriorityFeePerGas,
+        authorization as `0x${string}`,
+        nonce,
+        gasSummary,
+        gasTransactionHash,
       );
 
-      await DatabaseService.updateRescueTransaction(rescueTransaction.id, {
-        rescue_transaction_hash: rescueTxHash,
-      });
-
-      // 9. Wait for transaction receipt and get gas used
-      const receipt = await web3Service.getTransactionReceipt(
-        rescueTxHash,
-        chainId,
-      );
-      const gasUsed = receipt.gasUsed;
-      const ethUsed = gasUsed * receipt.effectiveGasPrice;
-
-      // 10. Update rescue transaction with results
-      const status = receipt.status === 'success' ? 'success' : 'failed';
-      await DatabaseService.updateRescueTransaction(rescueTransaction.id, {
-        gas_used: gasUsed.toString(),
-        eth_used: ethUsed.toString(),
-        status,
-      });
-
-      console.log(
-        `Rescue completed with status: ${status}. Transaction hash: ${rescueTxHash}`,
-      );
+      rescueTransaction = _rescueTransaction;
 
       if (status === 'success') {
         return NextResponse.json({
@@ -587,6 +587,27 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (error) {
+      const cause: CustomGasError | undefined = (error as Error)
+        ?.cause as CustomGasError;
+      if (cause) {
+        console.error((error as Error).message);
+        const {
+          extraGasEthNeeded,
+          estimatedGasEth,
+          remainingEth: _remainingEth,
+        } = cause;
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Insufficient gas for rescue transaction',
+            extraGasEthNeeded: Web3Service.formatEther(extraGasEthNeeded), // ETH value needed to complete the transaction
+            estimatedGasEth: Web3Service.formatEther(estimatedGasEth), // ETH value estimated for the transaction
+            remainingEth: Web3Service.formatEther(_remainingEth), // ETH value remaining in the wallet
+          },
+          { status: 400 },
+        );
+      }
+
       console.error('Error executing rescue transaction:', error);
 
       // Update rescue transaction as failed if we have a record
