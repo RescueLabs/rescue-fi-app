@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getMode } from '@/configs/supabase';
+import { DatabaseService } from '@/lib/services/database';
 import { web3Service, Web3Service } from '@/lib/services/web3';
 
 export async function GET(request: NextRequest) {
@@ -96,11 +98,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    let balance;
+    if (getMode() === 'local') {
+      balance = await publicClient.getBalance({
+        address: walletClient.account?.address as `0x${string}`,
+      });
+    } else {
+      const gasSummary = await DatabaseService.getGasSummary(
+        compromisedAddress,
+        Number(chainId),
+      );
+      balance = BigInt(gasSummary.remaining_eth);
+    }
+
     const gasData = await web3Service.gasToEth(gas, Number(chainId));
+    const gasInEth = gasData.gasInEth;
     const _gasData = {
-      gasInEth: gasData.gasInEth.toString(),
+      gasInEth: gasInEth.toString(),
       maxFeePerGas: gasData.maxFeePerGas.toString(),
       maxPriorityFeePerGas: gasData.maxPriorityFeePerGas.toString(),
+      balance,
+      deficit: balance > gasInEth ? 0 : gasInEth - balance,
     };
 
     return NextResponse.json({
