@@ -67,9 +67,9 @@ async function signStuff() {
     primaryType: 'RescueErc20',
     message: {
       caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
-      recipient: '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E',
-      tokens: ['0xf80d04a23fe771dae8d79a4005ffa42b7a6568f2'],
-      deadline: BigInt(5555555555555555),
+      recipient: '0x3FE8A6792047D5893ae49c65dFb0fA66aa286802',
+      tokens: ['0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d'],
+      deadline: BigInt(1e18),
       nonce,
     },
   });
@@ -93,9 +93,9 @@ async function signStuff() {
     primaryType: 'RescueErc20',
     message: {
       caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
-      recipient: '0xd8Ee094FeB76A51dFE00e08Fbb1206c8b4B54D8E',
-      tokens: ['0xf80d04a23fe771dae8d79a4005ffa42b7a6568f2'],
-      deadline: BigInt(5555555555555555),
+      recipient: '0x3FE8A6792047D5893ae49c65dFb0fA66aa286802',
+      tokens: ['0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d'],
+      deadline: BigInt(1e18),
       nonce,
     },
   });
@@ -107,7 +107,7 @@ async function signStuff() {
           (authorization?.r || '') + (authorization?.s.slice(2) || '')
         }0${authorization?.yParity?.toString(16) || ''}`
       : '',
-    deadline: 5555555555555555,
+    deadline: 1e18,
     nonce: authorization?.nonce,
   };
 }
