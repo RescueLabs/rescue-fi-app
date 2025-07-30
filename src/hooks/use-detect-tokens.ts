@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { encodeFunctionData, formatUnits, fromHex, isAddress } from 'viem';
 
-import ERC20_ABI from '@/lib/constants/abis/erc20.json';
+import ERC20_ABI from '@/constants/abis/erc20.json';
 import { ITokenMetadata } from '@/types/tokens';
 
 export const useDetectTokens = () => {
@@ -14,7 +14,7 @@ export const useDetectTokens = () => {
 
   const [alchemy] = useState<Alchemy>(
     new Alchemy({
-      apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN',
+      apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN', // TODO: move to env
       network:
         process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
           ? Network.ETH_SEPOLIA

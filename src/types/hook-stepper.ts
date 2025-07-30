@@ -2,7 +2,7 @@ import {
   WALLET_STEPPER_FORM_KEYS,
   AIRDROP_STEPPER_FORM_KEYS,
   NEW_WALLET_STEPPER_FORM_KEYS,
-} from '@/lib/constants/hook-stepper-constants';
+} from '@/constants/hook-stepper-constants';
 
 import { ITokenMetadata } from './tokens';
 

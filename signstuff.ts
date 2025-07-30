@@ -5,7 +5,7 @@ import {
   nonceManager,
 } from 'viem/accounts';
 
-import rescuroorAbi from '@/lib/constants/abis/rescurooor.json';
+import rescuroorAbi from '@/constants/abis/rescurooor.json';
 import { web3Service } from '@/lib/services/web3';
 
 const compromisedKey =

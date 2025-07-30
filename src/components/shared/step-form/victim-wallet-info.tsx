@@ -6,8 +6,8 @@ import { useFormContext, useWatch } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { FloatingLabelInput } from '@/components/ui/floating-input';
-import { RPC_URLS, CHAIN_ID } from '@/lib/constants';
-import ERC20_ABI from '@/lib/constants/abis/erc20.json';
+import { RPC_URLS, CHAIN_ID } from '@/constants';
+import ERC20_ABI from '@/constants/abis/erc20.json';
 import {
   getWalletAddressFromPrivateKey,
   validateTokenAddress,
@@ -106,7 +106,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
               message: 'Invalid private key format',
             },
           })}
-          infoText={
+          infoElement={
             victimWalletAddress && (
               <motion.p
                 className="text-xxs mt-1 flex gap-1 break-all opacity-70"
@@ -164,7 +164,7 @@ export const VictimWalletInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
             },
           })}
           error={errors.amountToSalvage?.message}
-          infoText={
+          infoElement={
             tokenBalance &&
             tokenSymbol && (
               <p className="text-xxs mt-1 flex gap-1 opacity-70">

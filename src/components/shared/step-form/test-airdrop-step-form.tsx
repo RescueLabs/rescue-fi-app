@@ -7,12 +7,11 @@ import { parseUnits } from 'ethers';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
-import { useLocalStorage } from 'usehooks-ts';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ERC20_INTERFACE, STORAGE_KEYS } from '@/constants';
+import { ERC20_INTERFACE } from '@/constants';
 import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useGasPrice } from '@/hooks/use-gas-Price';
@@ -21,6 +20,7 @@ import { useTokenDetails } from '@/hooks/use-token-details';
 import {
   getPrivateKeyAccount,
   getPublicClient,
+  getWalletAddressFromPrivateKey,
   roundToFiveDecimals,
   validatePrivateKey,
   validateTokenAddress,
@@ -52,10 +52,6 @@ export const AirdropStepForm = () => {
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
-  const [victimWalletAddress] = useLocalStorage<string>(
-    STORAGE_KEYS.victimAddress,
-    '',
-  );
 
   const [
     tokenAddress,
@@ -86,7 +82,7 @@ export const AirdropStepForm = () => {
 
   const {
     handleSubmit,
-    formState: { isSubmitting, isValid },
+    formState: { isValid },
   } = methods;
 
   const { getTokenDetails } = useTokenDetails();
@@ -171,7 +167,7 @@ export const AirdropStepForm = () => {
 
       const tokenDetails = await getTokenDetails(
         tokenAddress,
-        victimWalletAddress,
+        getWalletAddressFromPrivateKey(formData.victimPrivateKey),
         formData.receiverWalletAddress,
       );
 
@@ -337,25 +333,14 @@ export const AirdropStepForm = () => {
                 </Button>
               )}
 
-              {activeStep === 3 ? (
+              {activeStep === 1 && (
                 <Button
-                  className="w-[100px]"
                   type="button"
-                  onClick={handleSubmit(onSubmit)}
-                  disabled={isSubmitting}
+                  className="w-[100px]"
+                  onClick={handleNext}
                 >
-                  Submit
+                  Next
                 </Button>
-              ) : (
-                activeStep < 3 && (
-                  <Button
-                    type="button"
-                    className="w-[100px]"
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )
               )}
             </motion.div>
           </form>

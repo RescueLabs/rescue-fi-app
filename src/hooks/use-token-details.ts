@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { encodeFunctionData, formatUnits, isAddress } from 'viem';
 
-import { CHAIN_ID, RPC_URLS } from '@/lib/constants';
-import ERC20_ABI from '@/lib/constants/abis/erc20.json';
+import { CHAIN_ID, RPC_URLS } from '@/constants';
+import ERC20_ABI from '@/constants/abis/erc20.json';
 import { ITokenMetadata } from '@/types/tokens';
 
 export const useTokenDetails = () => {

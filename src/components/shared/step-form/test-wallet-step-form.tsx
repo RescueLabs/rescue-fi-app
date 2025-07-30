@@ -8,8 +8,10 @@ import { useLocalStorage } from 'usehooks-ts';
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { STORAGE_KEYS } from '@/constants';
+import { FinalBundleProvider } from '@/context/final-bundle-context';
 import { StageContext } from '@/context/stage-context';
-import { STORAGE_KEYS } from '@/lib/constants';
+import { getWalletAddressFromPrivateKey } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
 import { ITokenMetadata } from '@/types/tokens';
 
@@ -31,22 +33,6 @@ const getStepContent = (step: number) => {
 };
 
 export const TestWalletStepForm = () => {
-  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
-    STORAGE_KEYS.selectedTokens,
-    {},
-  );
-  const [_v, setVictimAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.victimAddress,
-    null,
-  );
-  const [_r, setReceiverAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.receiverAddress,
-    null,
-  );
-
-  const [activeStep, setActiveStep] = useState<number>(1);
-  const [erroredInputName, setErroredInputName] = useState<string>('');
-
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
@@ -55,10 +41,34 @@ export const TestWalletStepForm = () => {
     formState: { isValid },
   } = methods;
 
-  const [victimWalletAddress, receiverWalletAddress] = useWatch({
+  const [victimPrivateKey, receiverWalletAddress] = useWatch({
     control: methods.control,
-    name: ['victimWalletAddress', 'receiverWalletAddress'],
+    name: ['victimPrivateKey', 'receiverWalletAddress'],
   });
+
+  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
+    STORAGE_KEYS.selectedTokens,
+    {},
+  );
+  const [_vwa, setVictimAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimAddress,
+    null,
+  );
+  const [_vpk, setVictimPrivateKey] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimPrivateKey,
+    null,
+  );
+  const [_r, setReceiverAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.receiverAddress,
+    null,
+  );
+  const [_gf, _setGasFeeAmount] = useLocalStorage<number | null>(
+    STORAGE_KEYS.gasFeeAmount,
+    null,
+  );
+
+  const [activeStep, setActiveStep] = useState<number>(1);
+  const [erroredInputName, setErroredInputName] = useState<string>('');
 
   const isNextDisabled = useMemo(() => {
     switch (activeStep) {
@@ -69,13 +79,16 @@ export const TestWalletStepForm = () => {
     }
   }, [activeStep, isValid, selectedTokens]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (
       (isValid && activeStep === 1 && Object.keys(selectedTokens).length > 0) ||
       (isValid && activeStep === 2)
     ) {
-      if (activeStep === 1 && victimWalletAddress && receiverWalletAddress) {
-        setVictimAddress(victimWalletAddress);
+      if (activeStep === 1 && victimPrivateKey && receiverWalletAddress) {
+        const victimWalletAddressFromPrivateKey =
+          getWalletAddressFromPrivateKey(victimPrivateKey);
+        setVictimAddress(victimWalletAddressFromPrivateKey);
+        setVictimPrivateKey(victimPrivateKey);
         setReceiverAddress(receiverWalletAddress);
       }
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -85,7 +98,7 @@ export const TestWalletStepForm = () => {
     isValid,
     activeStep,
     selectedTokens,
-    victimWalletAddress,
+    victimPrivateKey,
     receiverWalletAddress,
   ]);
 
@@ -112,77 +125,79 @@ export const TestWalletStepForm = () => {
 
   return (
     <StageContext.Provider value={contextValue}>
-      <AnimatePresence mode="wait">
-        <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="text-2xl font-semibold"
-          >
-            Rescue Wallet Funds
-          </motion.p>
-
-          <motion.div
-            key={activeStep}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
-          </motion.div>
-
-          <FormProvider {...methods}>
-            <form
-              noValidate
-              className="flex w-full flex-col items-center gap-y-10"
+      <FinalBundleProvider>
+        <AnimatePresence mode="wait">
+          <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-2xl font-semibold"
             >
-              <Card
-                withBackground
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, delayChildren: 0.5 }}
-                className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
-              >
-                {getStepContent(activeStep)}
-              </Card>
+              Rescue Wallet Funds
+            </motion.p>
 
-              <motion.div
-                key={activeStep}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: 0.2 }}
-                className="flex justify-center space-x-[20px]"
-              >
-                {activeStep !== 3 && (
-                  <Button
-                    type="button"
-                    className="w-[100px]"
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 1}
-                  >
-                    Back
-                  </Button>
-                )}
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
+            </motion.div>
 
-                {activeStep === 1 && (
-                  <Button
-                    type="button"
-                    className="w-[100px]"
-                    disabled={isNextDisabled}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
-              </motion.div>
-            </form>
-          </FormProvider>
-        </div>
-      </AnimatePresence>
+            <FormProvider {...methods}>
+              <form
+                noValidate
+                className="flex w-full flex-col items-center gap-y-10"
+              >
+                <Card
+                  withBackground
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1, delayChildren: 0.5 }}
+                  className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
+                >
+                  {getStepContent(activeStep)}
+                </Card>
+
+                <motion.div
+                  key={activeStep}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex justify-center space-x-[20px]"
+                >
+                  {activeStep !== 3 && (
+                    <Button
+                      type="button"
+                      className="w-[100px]"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={activeStep === 1}
+                    >
+                      Back
+                    </Button>
+                  )}
+
+                  {activeStep === 1 && (
+                    <Button
+                      type="button"
+                      className="w-[100px]"
+                      disabled={isNextDisabled}
+                      onClick={handleNext}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </motion.div>
+              </form>
+            </FormProvider>
+          </div>
+        </AnimatePresence>
+      </FinalBundleProvider>
     </StageContext.Provider>
   );
 };

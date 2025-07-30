@@ -46,34 +46,48 @@ const FloatingLabelInput = React.forwardRef<
     id: string;
     label?: string;
     error?: string;
-    infoText?: React.ReactNode;
+    infoElement?: React.ReactNode;
     className?: string;
+    containerClassName?: string;
     extraElement?: React.ReactNode;
   }
->(({ id, label, error, infoText, extraElement, ...props }, ref) => {
-  return (
-    <div>
-      <div className="relative">
-        <FloatingInput
-          ref={ref}
-          id={id}
-          {...props}
-          className={cn(props?.className || '', error && '!border-red-500')}
-        />
-        <FloatingLabel htmlFor={id}>
-          {label} <span className="text-red-500">*</span>
-        </FloatingLabel>
-        {extraElement}
-      </div>
-      {infoText}
-      {error && (
-        <span className="!mt-[5px] block text-[12px] text-red-500">
-          {error}
-        </span>
-      )}
-    </div>
-  );
-});
+>(
+  (
+    {
+      id,
+      label,
+      error,
+      infoElement,
+      extraElement,
+      containerClassName,
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <>
+        <div className={cn('relative', containerClassName)}>
+          <FloatingInput
+            ref={ref}
+            id={id}
+            {...props}
+            className={cn(props?.className || '', error && '!border-red-500')}
+          />
+          <FloatingLabel htmlFor={id}>
+            {label} <span className="text-red-500">*</span>
+          </FloatingLabel>
+          {extraElement}
+        </div>
+        {infoElement}
+        {error && (
+          <span className="!mt-[5px] block text-[12px] text-red-500">
+            {error}
+          </span>
+        )}
+      </>
+    );
+  },
+);
 FloatingLabelInput.displayName = 'FloatingLabelInput';
 
 export { FloatingInput, FloatingLabel, FloatingLabelInput };

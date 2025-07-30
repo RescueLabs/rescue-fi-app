@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { API_KEY, CHAIN_ID, ETHERSCAN_URLS } from '@/lib/constants';
+import { API_KEY, CHAIN_ID, ETHERSCAN_URLS } from '@/constants';
 
 export const GET = async (req: NextRequest) => {
   const airdropContract = req.nextUrl.searchParams.get(

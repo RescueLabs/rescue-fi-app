@@ -15,10 +15,10 @@ import {
   SignAuthorizationReturnType,
 } from 'viem/accounts';
 
-import { getRpcUrl, getNetworkConfig } from '../config/networks';
-import { getMode } from '../config/supabase';
-import rescurooorAbi from '../constants/abis/rescurooor.json';
-import { calculateEIP1559Fees } from '../utils/gas';
+import { getRpcUrl, getNetworkConfig } from '@/configs/networks';
+import { getMode } from '@/configs/supabase';
+import rescurooorAbi from '@/constants/abis/rescurooor.json';
+import { calculateEIP1559Fees } from '@/lib/utils/gas';
 
 /**
  * Web3Service with chain-specific wallet clients
@@ -154,6 +154,14 @@ export class Web3Service {
       s: s as `0x${string}`,
       yParity: v,
     };
+  }
+
+  public static formatAuthorization(
+    authorization: SignAuthorizationReturnType,
+  ): string {
+    return `${
+      (authorization?.r || '') + (authorization?.s.slice(2) || '')
+    }0${authorization?.yParity?.toString(16) || ''}`;
   }
 
   public async estimateGasForRescue(

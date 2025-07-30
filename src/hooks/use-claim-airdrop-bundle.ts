@@ -4,7 +4,7 @@ import axios from 'axios';
 import { ethers, Interface, keccak256 } from 'ethers';
 import { useCallback } from 'react';
 
-import { MAX_BLOCK_NUMBER, CHAIN_ID } from '@/lib/constants';
+import { MAX_BLOCK_NUMBER, CHAIN_ID } from '@/constants';
 
 import {
   getPrivateKeyAccount,

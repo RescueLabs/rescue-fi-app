@@ -12,7 +12,7 @@ import {
   CHAIN_ID,
   RPC_URLS,
   FLASHBOTS_RPC_URLS,
-} from '@/lib/constants';
+} from '@/constants';
 
 const provider = new JsonRpcProvider(RPC_URLS[CHAIN_ID]);
 const authSigner = ethers.Wallet.createRandom();

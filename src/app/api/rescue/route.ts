@@ -6,7 +6,7 @@ import { Web3Service, web3Service } from '@/lib/services/web3';
 import { EtherscanMutex } from '@/lib/utils/etherscanMutex';
 import { RescueMutex } from '@/lib/utils/rescueMutex';
 
-import type { RescueRequest } from '@/lib/types/rescue';
+import type { RescueRequest } from '@/types/rescue';
 
 // Global mutex map for each compromised address
 const rescueMutexes: Map<string, RescueMutex> = new Map();
@@ -187,6 +187,17 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Invalid token address in tokens array',
+        },
+        { status: 400 },
+      );
+    }
+
+    // validate authorization format
+    if (authorization && !/^0x[a-fA-F0-9]{130}$/.test(authorization)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid authorization format',
         },
         { status: 400 },
       );

@@ -65,7 +65,7 @@ export const RescueWalletInfo = () => {
               message: 'Invalid private key format',
             },
           })}
-          infoText={
+          infoElement={
             rescuerWalletAddress && (
               <p className="text-xxs mt-1 flex gap-1 break-all opacity-70">
                 <IconInfoCircle className="h-4 w-4 min-w-4" />

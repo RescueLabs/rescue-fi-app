@@ -1,15 +1,25 @@
 import { Interface } from 'ethers';
-import { sepolia, mainnet } from 'viem/chains';
+import {
+  sepolia,
+  mainnet,
+  optimismSepolia,
+  optimism,
+  base,
+  bsc,
+  arbitrum,
+  bscTestnet,
+  baseSepolia,
+  arbitrumSepolia,
+  Chain,
+} from 'viem/chains';
 
 import {
   getSepoliaMevShareClient,
   getEthereumMevShareClient,
-} from '../flashbots';
+} from '../lib/flashbots';
 
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK;
 
-// Seplia: 11155111
-// Mainnet: 1
 export const CHAIN_IDS = {
   mainnet: 1,
   sepolia: 11155111,
@@ -80,9 +90,55 @@ export const SEPOLIA_RECEIVER_ADDRESS =
 export const ETHEREUM_RECEIVER_ADDRESS = '';
 
 export const STORAGE_KEYS = {
+  // general
+  victimPrivateKey: 'rescuefi-victimPrivateKey',
   victimAddress: 'rescuefi-victimAddress',
   receiverAddress: 'rescuefi-receiverAddress',
   funderAddress: 'rescuefi-funderAddress',
   selectedTokens: 'rescuefi-selectedTokens',
   bundleId: 'rescuefi-bundleId',
+  gasFeeAmount: 'rescuefi-gasFeeAmount',
+  authorizationSignature: 'rescuefi-authorizationSignature',
+  eip712Signature: 'rescuefi-eip712Signature',
+
+  // airdrop
+  airdropContractAddress: 'rescuefi-airdropContractAddress',
+  airdropCallData: 'rescuefi-airdropCallData',
+};
+
+export const QUERY_KEYS = {
+  rescueTokens: 'rescue-tokens',
+  estimateGas: 'estimate-gas',
+  delegatedDetails: 'delegated-details',
+};
+
+export const BACKEND_WALLET_ADDRESS =
+  '0x0000000000000000000000000000000000000000';
+
+export const TEST_CHAINS = [
+  sepolia,
+  arbitrumSepolia,
+  bscTestnet,
+  baseSepolia,
+  optimismSepolia,
+];
+
+export const MAINNET_CHAINS = [mainnet, arbitrum, bsc, base, optimism];
+
+export const CHAINS: Chain[] =
+  process.env.NODE_ENV === 'production' ? MAINNET_CHAINS : TEST_CHAINS;
+
+export const ACCEPTED_CHAIN_MAP = new Set(CHAINS.map((chain) => chain.id));
+
+export const BLOCKSCAN_URLS = {
+  1: 'https://etherscan.io/tx',
+  11155111: 'https://sepolia.etherscan.io/tx',
+  42161: 'https://arbiscan.io/tx',
+  421614: 'https://sepolia.arbiscan.io/tx',
+  56: 'https://bscscan.com/tx',
+  97: 'https://testnet.bscscan.com/tx',
+  8453: 'https://basescan.org/tx',
+  84532: 'https://sepolia.basescan.org/tx',
+  10: 'https://optimistic.etherscan.io/tx',
+  11155420: 'https://sepolia-optimism.etherscan.io/tx',
 };

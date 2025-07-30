@@ -21,7 +21,7 @@ export const AIRDROP_STEPPER_FORM_KEYS = {
 
 export const NEW_WALLET_STEPPER_FORM_KEYS = {
   1: [
-    'victimWalletAddress',
+    'victimPrivateKey',
     'receiverWalletAddress',
     'showInputManual',
     'manualTokenAddress',

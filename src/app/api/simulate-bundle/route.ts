@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { CHAIN_ID, MEV_CLIENT } from '@/lib/constants';
+import { CHAIN_ID, MEV_CLIENT } from '@/constants';
 
 export const POST = async (req: NextRequest) => {
   const body = await req.json();

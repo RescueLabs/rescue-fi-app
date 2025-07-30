@@ -1,31 +1,41 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { IconLoader2 } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import React, {
   ReactNode,
   useCallback,
-  useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
-import { v4 as uuidv4 } from 'uuid';
-import { useAccount, useSendTransaction } from 'wagmi';
+import { encodeFunctionData, formatEther } from 'viem';
+import { SignAuthorizationReturnType } from 'viem/actions';
+import {
+  useAccount,
+  useSendTransaction,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
 
-import { RpcEnforcerContext } from '@/components/rpc-enforcer-provider';
-import { LoadingSigning } from '@/components/shared/icons/loading-signing';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ACCEPTED_CHAIN_MAP, QUERY_KEYS, STORAGE_KEYS } from '@/constants';
+import RESCUER_ABI from '@/constants/abis/rescuer.json';
+import { useFinalBundleContext } from '@/context/final-bundle-context';
 import { useStageContext } from '@/context/stage-context';
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
-import { useCreateRescueWalletTxs } from '@/hooks/use-create-rescue-wallet-txs';
-import { useEffectOnce } from '@/hooks/use-effect-once';
-import { CHAIN_ID, STORAGE_KEYS } from '@/lib/constants';
+import {
+  deserializeBigInt,
+  getPrivateKeyAccount,
+  getWalletClient,
+  serializeBigInt,
+} from '@/lib/utils';
 import { ITokenMetadata } from '@/types/tokens';
-import { Tx, Txs } from '@/types/transaction';
 
-const ConnectWallet = ({
+const ConnectSponsorWallet = ({
   titleMessage,
   goToNextStage,
   isValidAddress,
@@ -72,18 +82,21 @@ const ConnectWallet = ({
           showBalance={false}
         />
 
-        {isConnected && isValidAddress(address) && CHAIN_ID === chainId && (
-          <Button
-            className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-            onClick={() => {
-              setAddressOnLocalStorage(address!);
-              goToNextStage();
-            }}
-            type="button"
-          >
-            Confirm
-          </Button>
-        )}
+        {isConnected &&
+          isValidAddress(address) &&
+          chainId &&
+          ACCEPTED_CHAIN_MAP.has(chainId) && (
+            <Button
+              className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+              onClick={() => {
+                setAddressOnLocalStorage(address!);
+                goToNextStage();
+              }}
+              type="button"
+            >
+              Confirm
+            </Button>
+          )}
 
         {isConnected && !isValidAddress(address) && (
           <p className="w-fit text-sm text-red-500 hover:text-red-600 dark:text-red-600 dark:hover:text-red-700">
@@ -95,302 +108,360 @@ const ConnectWallet = ({
   );
 };
 
-const AddCustomRPC = ({
-  uuid,
-  setStage,
-  setTransactions,
+const CalculateGasFeesAndSendFunds = ({
+  authorizationSignature,
+  eip712Signature,
+  rescueTokenAddresses,
+  deadline,
+  victimWalletAddress,
+  receiverWalletAddress,
+  authorizationNonce,
 }: {
-  uuid: string;
-  setStage: (stage: number) => void;
-  setTransactions: (transactions: Txs) => void;
+  authorizationSignature: SignAuthorizationReturnType | null;
+  eip712Signature: string | null;
+  rescueTokenAddresses: `0x${string}`[];
+  deadline: bigint;
+  victimWalletAddress: `0x${string}` | null;
+  receiverWalletAddress: `0x${string}` | null;
+  authorizationNonce: bigint;
 }) => {
-  const [_bundleId, setBundleId] = useLocalStorage<string | null>(
-    STORAGE_KEYS.bundleId,
-    null,
+  const { setFinalBundle } = useFinalBundleContext();
+  const { setStage: setCentralStage } = useStageContext();
+
+  const _authorizationSignature = useMemo(
+    () =>
+      `${
+        (authorizationSignature?.r || '') +
+        (authorizationSignature?.s.slice(2) || '')
+      }0${authorizationSignature?.yParity?.toString(16) || ''}`,
+    [authorizationSignature],
   );
-  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
+
+  const rescueErc20Data = useMemo(
+    () =>
+      encodeFunctionData({
+        abi: RESCUER_ABI,
+        functionName: 'rescue_erc20',
+        args: [
+          receiverWalletAddress!,
+          rescueTokenAddresses,
+          deadline,
+          eip712Signature!,
+        ],
+      }),
+    [],
+  );
+
+  const { chain } = useAccount();
+
+  const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
+    gasInEth: string;
+    maxPriorityFeePerGas: string;
+    maxFeePerGas: string;
+  }>({
+    queryKey: [QUERY_KEYS.estimateGas, victimWalletAddress],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/estimateGas?chainId=${chain?.id}&data=${rescueErc20Data}&compromisedAddress=${victimWalletAddress}&authorization=${_authorizationSignature}&nonce=${authorizationNonce}`,
+      );
+      return response.data as Promise<{
+        gasInEth: string;
+        maxPriorityFeePerGas: string;
+        maxFeePerGas: string;
+      }>;
+    },
+    enabled:
+      !!victimWalletAddress &&
+      !!_authorizationSignature &&
+      authorizationNonce >= BigInt(0) &&
+      !!chain &&
+      !!rescueErc20Data,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
+  });
+
+  const rescueErc20Gas = useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 9,
+        maximumFractionDigits: 9,
+      }).format(Number(formatEther(BigInt(gasData?.gasInEth || '0')))),
+    [gasData],
+  );
+
+  const {
+    data: sendTransactionData,
+    sendTransaction,
+    isPending: isSendingRescueErc20Gas,
+  } = useSendTransaction({});
+
+  const {
+    data: gasTransactionReceipt,
+    isLoading: isTransactionReceiptLoading,
+  } = useWaitForTransactionReceipt({
+    hash: sendTransactionData,
+  });
+
+  useEffect(() => {
+    if (
+      gasTransactionReceipt &&
+      chain?.id &&
+      receiverWalletAddress &&
+      victimWalletAddress &&
+      eip712Signature &&
+      _authorizationSignature &&
+      rescueTokenAddresses?.length > 0
+    ) {
+      setFinalBundle({
+        authorization: _authorizationSignature,
+        eip712Signature: eip712Signature!,
+        tokens: rescueTokenAddresses,
+        deadline: Number(deadline),
+        receiverWallet: receiverWalletAddress!,
+        compromisedAddress: victimWalletAddress!,
+        chainId: chain.id,
+        gasTransactionHash: gasTransactionReceipt.transactionHash,
+        nonce: Number(authorizationSignature?.nonce),
+      });
+
+      setCentralStage(3);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gasTransactionReceipt]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+      className="flex flex-col items-center justify-center gap-8"
+    >
+      <div className="space-y-3 text-center text-white">
+        <p className="text-md flex justify-center text-gray-500 dark:text-gray-400">
+          <InfoCircledIcon className="hidden size-6 min-w-4 sm:!block" />
+          <div className="flex flex-col gap-3">
+            <span>
+              You have connected a safe wallet to send funds. Now you need to
+              send gas fees to rescue the selected tokens.
+            </span>
+            <span className="text-lg">
+              The amount of gas fees is{' '}
+              <span className="font-bold text-purple-500">
+                {isGasDataLoading && !gasData ? (
+                  <Skeleton className="mr-1 inline-block h-4 w-8" />
+                ) : (
+                  `${rescueErc20Gas} `
+                )}
+                ETH
+              </span>
+              .
+            </span>
+          </div>
+        </p>
+      </div>
+
+      <Button
+        className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+        onClick={() => {
+          sendTransaction({
+            to: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
+            data: victimWalletAddress!,
+            value: gasData?.gasInEth ? BigInt(gasData.gasInEth) : BigInt(0),
+          });
+        }}
+        type="button"
+        disabled={
+          isSendingRescueErc20Gas || !gasData || isTransactionReceiptLoading
+        }
+      >
+        {isSendingRescueErc20Gas || isTransactionReceiptLoading ? (
+          <IconLoader2 className="size-4 animate-spin" />
+        ) : (
+          'Send Funds'
+        )}
+      </Button>
+    </motion.div>
+  );
+};
+
+export const ConnectSignTransactions = () => {
+  const { chain } = useAccount();
+
+  const [stage, setStage] = useState<number>(1);
+  const [victimWalletAddress] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.victimAddress,
     null,
   );
-  const [receiverAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.receiverAddress,
+  const [victimPrivateKey] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.victimPrivateKey,
     null,
   );
   const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
     STORAGE_KEYS.selectedTokens,
     {},
   );
-  const [checkLoading, setCheckLoading] = useState<boolean>(false);
-
-  const { addCustomNetwork, checkIfConnectedtoFlashbotRpc } =
-    useContext(RpcEnforcerContext);
-
-  const [_, copy] = useCopyToClipboard();
-  const { createTxs } = useCreateRescueWalletTxs();
-
-  const rpcUrl = useMemo(
-    () =>
-      `https://rpc${process.env.NEXT_PUBLIC_NETWORK === 'sepolia' ? '-sepolia' : ''}.flashbots.net?bundle=${uuid}`,
-    [uuid],
-  );
-
-  const proceed = useCallback(async () => {
-    setCheckLoading(true);
-    const isConnected = await checkIfConnectedtoFlashbotRpc();
-
-    if (isConnected) {
-      setBundleId(uuid);
-      const tokens = Object.values(selectedTokens).map((token) => ({
-        token: token.address,
-        amount: BigInt(token.amountBigInt),
-      }));
-
-      if (tokens.length === 0) {
-        toast.error('No tokens selected to rescue');
-        setCheckLoading(false);
-        return;
-      }
-
-      try {
-        const txs = await createTxs(victimAddress!, receiverAddress!, tokens);
-        setTransactions(txs);
-        setStage(3);
-      } catch (error) {
-        toast.error('Error creating transactions');
-        console.error(error, 'error creating transactions');
-      } finally {
-        setCheckLoading(false);
-      }
-    } else {
-      toast.error('Please connect to the Flashbots Protect RPC');
-    }
-
-    setCheckLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <>
-      <div className="flex flex-col items-center gap-1 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center gap-2"
-        >
-          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
-            Add Flashbots Protect RPC.
-            <br />
-          </span>
-        </motion.p>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-        className="flex flex-col items-center justify-center gap-4"
-      >
-        <Button
-          className="w-[150px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-          onClick={() => addCustomNetwork(rpcUrl)}
-          type="button"
-        >
-          Add automatically
-        </Button>
-
-        <div className="space-y-3 text-center text-white">
-          <p className="flex justify-center text-sm text-gray-500 dark:text-gray-400">
-            <InfoCircledIcon className="-mt-0.5 hidden size-6 min-w-4 sm:!block" />
-            <span>
-              If adding automatically does not work, please add the following
-              RPC manually to your wallet:
-            </span>
-          </p>
-          <div className="flex flex-col gap-1">
-            <p className="text-lg font-medium">RPC Name:</p>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              RescueFi-Flashbots Protect
-            </span>
-
-            <p className="text-lg font-medium">Chain ID:</p>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {CHAIN_ID}
-            </span>
-
-            <p className="text-lg font-medium">RPC URL:</p>
-            <span className="flex justify-center">
-              <span
-                className="block w-fit cursor-pointer rounded-md bg-purple-500 bg-opacity-20 px-2 py-0.5 text-xs text-purple-500"
-                onClick={() => copy(rpcUrl)}
-              >
-                {rpcUrl}
-              </span>
-            </span>
-          </div>
-
-          <Button
-            className="w-[226px] !rounded-full bg-purple-500 text-sm hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-            onClick={proceed}
-            type="button"
-          >
-            {checkLoading ? (
-              <IconLoader2 className="size-4 animate-spin" />
-            ) : (
-              'I have added the RPC, Proceed'
-            )}
-          </Button>
-        </div>
-      </motion.div>
-    </>
-  );
-};
-
-const SignFunderTransaction = ({
-  setStage,
-  transaction,
-}: {
-  transaction: Tx;
-  setStage: (stage: number) => void;
-}) => {
-  const { sendTransactionAsync } = useSendTransaction({
-    mutation: {
-      onSuccess: () => {
-        setStage(4);
-      },
-      onError: () => {
-        toast.error(
-          'Transaction failed, Try again. If the problem persists, please refresh the page.',
-        );
-        setStage(1);
-      },
-    },
-  });
-
-  useEffectOnce(() => {
-    sendTransactionAsync(transaction);
-  });
-
-  return (
-    <>
-      <div className="flex flex-col items-center gap-1 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center gap-2"
-        >
-          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
-            Please sign the funder transaction.
-            <br />
-          </span>
-        </motion.p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="hidden size-4 min-w-4 sm:!block" />
-          Great! You have added the Flashbots Protect RPC. Now you need to sign
-          the transaction to send ETH to the victim wallet.
-        </p>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-        className="mt-8 flex flex-col items-center justify-center gap-4"
-      >
-        <LoadingSigning />
-      </motion.div>
-    </>
-  );
-};
-
-const SignVictimTransactions = ({
-  setStage,
-  transactions,
-}: {
-  transactions: Tx[];
-  setStage: (stage: number) => void;
-}) => {
-  const { sendTransactionAsync } = useSendTransaction();
-  const { setStage: setNextStep } = useStageContext();
-
-  const [bundleId] = useLocalStorage<string | null>(
-    STORAGE_KEYS.bundleId,
-    null,
-  );
-
-  const handleSignTransactions = useCallback(async () => {
-    try {
-      await Promise.all(
-        transactions.map(async (tx) => {
-          await sendTransactionAsync(tx);
-        }),
-      );
-      setNextStep(3);
-    } catch (error) {
-      toast.error(
-        'Transaction failed, Try again. If the problem persists, please refresh the page.',
-      );
-      setStage(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, bundleId]);
-
-  useEffectOnce(() => {
-    handleSignTransactions();
-  });
-
-  return (
-    <>
-      <div className="flex flex-col items-center gap-1 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center gap-2"
-        >
-          <span className="text-lg font-medium text-yellow-700 dark:text-yellow-400 sm:text-xl">
-            Please sign the following transactions on the victim wallet.
-            <br />
-          </span>
-        </motion.p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          <InfoCircledIcon className="hidden size-4 min-w-4 sm:!block" />
-          <span>
-            Great! You have connected the victim wallet. Now you need to sign
-            the following transactions.
-          </span>
-        </p>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-        className="mt-8 flex flex-col items-center justify-center gap-4"
-      >
-        <LoadingSigning />
-      </motion.div>
-    </>
-  );
-};
-
-export const ConnectSignTransactions = () => {
-  const uuid = uuidv4();
-
-  const [stage, setStage] = useState<number>(1);
-  const [transactions, setTransactions] = useState<Txs | null>(null);
-  const [victimAddress] = useLocalStorage<`0x${string}` | null>(
-    STORAGE_KEYS.victimAddress,
+  const [receiverWalletAddress] = useLocalStorage<`0x${string}` | null>(
+    STORAGE_KEYS.receiverAddress,
     null,
   );
   const [_, setFunderAddress] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.funderAddress,
     null,
   );
+  const [authorizationSignature, setAuthorizationSignature] =
+    useLocalStorage<SignAuthorizationReturnType | null>(
+      STORAGE_KEYS.authorizationSignature,
+      null,
+      {
+        serializer: (value) => serializeBigInt(value),
+        deserializer: (value) => deserializeBigInt(value),
+      },
+    );
+  const [eip712Signature, setEip712Signature] = useLocalStorage<string | null>(
+    STORAGE_KEYS.eip712Signature,
+    null,
+  );
+
+  const { data: delegatedDetails } = useQuery<{
+    isDelegated: boolean;
+    nonce: string;
+  }>({
+    queryKey: [QUERY_KEYS.delegatedDetails, victimWalletAddress, chain?.id],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/address/${victimWalletAddress}/delegated?chainId=${chain?.id}`,
+      );
+      return response.data as {
+        isDelegated: boolean;
+        nonce: string;
+      };
+    },
+    enabled: !!victimWalletAddress && !!chain?.id,
+  });
+
+  const rescueTokenAddresses = useMemo(
+    () => Object.values(selectedTokens).map((token) => token.address),
+    [selectedTokens],
+  );
+
+  const deadline = useMemo(
+    () => BigInt(1e18), // 20 minutes from now (in seconds)
+    [],
+  );
+
+  const signAuthorization = useCallback(async (): Promise<
+    SignAuthorizationReturnType | undefined
+  > => {
+    if (!victimPrivateKey || !chain) return;
+
+    const eoa = getPrivateKeyAccount(victimPrivateKey);
+    if (!eoa) return;
+
+    const walletClient = getWalletClient(victimPrivateKey, chain);
+    if (!walletClient) {
+      toast.error('Failed to get wallet client');
+      return;
+    }
+
+    const authorization = await walletClient.signAuthorization({
+      account: eoa,
+      contractAddress: process.env.RESCUROOOR_CONTRACT_ADDRESS as `0x${string}`,
+    });
+
+    return authorization;
+  }, [victimPrivateKey, chain]);
+
+  const signEIP712Signature = useCallback(async (): Promise<
+    string | undefined
+  > => {
+    if (
+      !victimPrivateKey ||
+      !chain ||
+      !victimWalletAddress ||
+      !receiverWalletAddress ||
+      !delegatedDetails
+    ) {
+      console.log('Missing required data:', {
+        victimPrivateKey: !!victimPrivateKey,
+        chain: !!chain,
+        victimWalletAddress: !!victimWalletAddress,
+        receiverWalletAddress: !!receiverWalletAddress,
+        delegatedDetails: !!delegatedDetails,
+      });
+      return;
+    }
+
+    const eoa = getPrivateKeyAccount(victimPrivateKey);
+    if (!eoa) return;
+
+    const signedTypedData = await eoa.signTypedData({
+      domain: {
+        name: 'Rescuerooor',
+        version: '1',
+        chainId: chain.id,
+        verifyingContract: eoa.address,
+      },
+      types: {
+        RescueErc20: [
+          { name: 'caller', type: 'address' },
+          { name: 'recipient', type: 'address' },
+          { name: 'tokens', type: 'address[]' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+        ],
+      },
+      primaryType: 'RescueErc20',
+      message: {
+        caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
+        recipient: receiverWalletAddress,
+        tokens: rescueTokenAddresses,
+        deadline,
+        nonce: BigInt(delegatedDetails?.nonce || '-1'),
+      },
+    });
+
+    return signedTypedData;
+  }, [
+    victimPrivateKey,
+    delegatedDetails,
+    chain,
+    rescueTokenAddresses,
+    receiverWalletAddress,
+    victimWalletAddress,
+    deadline,
+  ]);
+
+  const signAuthorizations = useCallback(async () => {
+    const _authorization = await signAuthorization();
+    const _eip712Signature = await signEIP712Signature();
+
+    if (!_authorization || !_eip712Signature) {
+      return;
+    }
+
+    setAuthorizationSignature(_authorization);
+    setEip712Signature(_eip712Signature);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signAuthorization, signEIP712Signature, delegatedDetails]);
 
   const stageContent = useMemo(() => {
     switch (stage) {
       case 1:
         return (
-          <ConnectWallet
-            goToNextStage={() => setStage(2)}
+          <ConnectSponsorWallet
+            goToNextStage={async () => {
+              if (!delegatedDetails) {
+                toast.info('Please wait a little for wallet delegation');
+                return;
+              }
+
+              await signAuthorizations();
+
+              setStage(2);
+            }}
             isValidAddress={(address?: `0x${string}`) =>
-              address?.toLowerCase() !== victimAddress?.toLowerCase()
+              address?.toLowerCase() !== victimWalletAddress?.toLowerCase()
             }
             setAddressOnLocalStorage={setFunderAddress}
             titleMessage="Please connect a [safe] wallet to send funds."
@@ -410,50 +481,24 @@ export const ConnectSignTransactions = () => {
         );
       case 2:
         return (
-          <AddCustomRPC
-            uuid={uuid}
-            setStage={setStage}
-            setTransactions={setTransactions}
-          />
-        );
-      case 3:
-        return (
-          <SignFunderTransaction
-            setStage={setStage}
-            transaction={transactions?.funder!}
-          />
-        );
-      case 4:
-        return (
-          <ConnectWallet
-            goToNextStage={() => setStage(5)}
-            isValidAddress={(address?: `0x${string}`) =>
-              address?.toLowerCase() === victimAddress?.toLowerCase()
-            }
-            setAddressOnLocalStorage={setFunderAddress}
-            titleMessage="Please connect Victim wallet to sign transactions."
-            descriptionMessage={
-              <span>
-                You would now need to connect the{' '}
-                <span className="font-bold">victim wallet</span> to sign the
-                remaining set of transactions.
-              </span>
-            }
-            validAddressMessage="You are not connected to the victim wallet, please connect to the victim wallet"
-          />
-        );
-      case 5:
-        return (
-          <SignVictimTransactions
-            setStage={setStage}
-            transactions={transactions?.victim!}
-          />
+          authorizationSignature &&
+          eip712Signature && (
+            <CalculateGasFeesAndSendFunds
+              authorizationSignature={authorizationSignature}
+              eip712Signature={eip712Signature}
+              rescueTokenAddresses={rescueTokenAddresses}
+              deadline={deadline}
+              victimWalletAddress={victimWalletAddress}
+              receiverWalletAddress={receiverWalletAddress}
+              authorizationNonce={BigInt(delegatedDetails?.nonce || '0')}
+            />
+          )
         );
       default:
         return 'Unknown stage';
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, uuid]);
+  }, [stage, authorizationSignature, eip712Signature, delegatedDetails]);
 
   return (
     <div className="flex flex-col gap-8">
