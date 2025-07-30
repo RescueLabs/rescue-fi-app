@@ -106,6 +106,12 @@ export const STORAGE_KEYS = {
   airdropCallData: 'rescuefi-airdropCallData',
 };
 
+export const QUERY_KEYS = {
+  rescueTokens: 'rescue-tokens',
+  estimateGas: 'estimate-gas',
+  delegatedDetails: 'delegated-details',
+};
+
 export const BACKEND_WALLET_ADDRESS =
   '0x0000000000000000000000000000000000000000';
 
@@ -123,3 +129,16 @@ export const CHAINS: Chain[] =
   process.env.NODE_ENV === 'production' ? MAINNET_CHAINS : TEST_CHAINS;
 
 export const ACCEPTED_CHAIN_MAP = new Set(CHAINS.map((chain) => chain.id));
+
+export const BLOCKSCAN_URLS = {
+  1: 'https://etherscan.io/tx',
+  11155111: 'https://sepolia.etherscan.io/tx',
+  42161: 'https://arbiscan.io/tx',
+  421614: 'https://sepolia.arbiscan.io/tx',
+  56: 'https://bscscan.com/tx',
+  97: 'https://testnet.bscscan.com/tx',
+  8453: 'https://basescan.org/tx',
+  84532: 'https://sepolia.basescan.org/tx',
+  10: 'https://optimistic.etherscan.io/tx',
+  11155420: 'https://sepolia-optimism.etherscan.io/tx',
+};

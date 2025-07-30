@@ -1,63 +1,104 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import React, { useMemo } from 'react';
+import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 
-import { NETWORK, STORAGE_KEYS } from '@/constants';
-import { useBundle } from '@/hooks/use-bundle';
+import { BLOCKSCAN_URLS, QUERY_KEYS, STORAGE_KEYS } from '@/constants';
+import { useFinalBundleContext } from '@/context/final-bundle-context';
+import { useEffectOnce } from '@/hooks/use-effect-once';
 import { ITokenMetadata } from '@/types/tokens';
 
 import { FormRescueFundsLoading } from './form-rescue-funds-loading';
 
 export const SendFinalBundle = () => {
-  const { sendBundle } = useBundle();
+  const { finalBundle } = useFinalBundleContext();
+  const queryClient = useQueryClient();
 
-  const [bundleId] = useLocalStorage<string | null>(
-    STORAGE_KEYS.bundleId,
-    null,
-  );
-  const [selectedTokens] = useLocalStorage<Record<string, ITokenMetadata>>(
-    STORAGE_KEYS.selectedTokens,
-    {},
-  );
-  const [receiverAddress] = useLocalStorage<string | null>(
+  const [, , removeSelectedTokens] = useLocalStorage<
+    Record<string, ITokenMetadata>
+  >(STORAGE_KEYS.selectedTokens, {});
+  const [, , removeReceiverAddress] = useLocalStorage<string | null>(
     STORAGE_KEYS.receiverAddress,
     null,
   );
-  const [success, setSuccess] = useState<boolean>(false);
-  const [failed, setFailed] = useState<boolean>(false);
-  const [errorSubmitting, setErrorSubmitting] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [, , removeVictimPrivateKey] = useLocalStorage<string | null>(
+    STORAGE_KEYS.victimPrivateKey,
+    null,
+  );
+  const [, , removeVictimAddress] = useLocalStorage<string | null>(
+    STORAGE_KEYS.victimAddress,
+    null,
+  );
+  const [, , removeAuthorizationSignature] = useLocalStorage<string | null>(
+    STORAGE_KEYS.authorizationSignature,
+    null,
+  );
+  const [, , removeEip712Signature] = useLocalStorage<string | null>(
+    STORAGE_KEYS.eip712Signature,
+    null,
+  );
 
-  const handleSubmit = useCallback(async () => {
-    setLoading(true);
-    const bundleData = await sendBundle(bundleId!);
-    if (bundleData?.success) {
-      setSuccess(true);
-    } else {
-      setFailed(true);
+  const clearAllLocalStorage = () => {
+    removeSelectedTokens();
+    removeReceiverAddress();
+    removeVictimPrivateKey();
+    removeVictimAddress();
+    removeAuthorizationSignature();
+    removeEip712Signature();
+  };
+
+  const {
+    mutate: rescueTokensResponse,
+    isPending: isRescueTokensLoading,
+    isError: isRescueTokensError,
+    isSuccess: isRescueTokensSuccess,
+    data: rescueTokensData,
+  } = useMutation<{
+    rescueTransactionHash: string;
+  }>({
+    mutationFn: async () => {
+      const response = await axios.post(`/api/rescue`, finalBundle);
+
+      if (response.data.error || !response.data.success) {
+        toast.error(response.data.error || '');
+        throw new Error(response.data.error);
+      }
+
+      return response.data.data;
+    },
+    onSuccess: () => {
+      clearAllLocalStorage();
+    },
+  });
+
+  useEffectOnce(() => {
+    if (finalBundle) {
+      rescueTokensResponse();
     }
-    setLoading(false);
-  }, [bundleId, sendBundle]);
+  });
 
-  useEffect(() => {
-    handleSubmit();
-  }, [handleSubmit]);
+  const status = useMemo(() => {
+    if (isRescueTokensSuccess || rescueTokensData) return 'success';
+    if (isRescueTokensLoading) return 'loading';
+    if (isRescueTokensError) return 'error';
+    return 'loading';
+  }, [
+    isRescueTokensLoading,
+    isRescueTokensSuccess,
+    isRescueTokensError,
+    rescueTokensData,
+  ]);
 
   return (
     <FormRescueFundsLoading
-      formRescueFundsLoadingStatus={
-        success
-          ? 'success'
-          : failed || errorSubmitting
-            ? 'error'
-            : loading
-              ? 'loading'
-              : 'loading'
-      }
+      formRescueFundsLoadingStatus={status}
       tryAgain={() => {
-        setErrorSubmitting(false);
-        handleSubmit();
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.rescueTokens, finalBundle?.compromisedAddress],
+        });
       }}
-      balanceUrl={`https://${NETWORK === 'sepolia' ? 'sepolia.' : ''}etherscan.io/token/${Object.values(selectedTokens)[0].address}?a=${receiverAddress}`}
+      balanceUrl={`${BLOCKSCAN_URLS[finalBundle?.chainId as keyof typeof BLOCKSCAN_URLS]}/${rescueTokensData?.rescueTransactionHash}`}
     />
   );
 };

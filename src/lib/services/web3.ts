@@ -15,9 +15,10 @@ import {
   SignAuthorizationReturnType,
 } from 'viem/accounts';
 
-import { getRpcUrl, getNetworkConfig } from '../../configs/networks';
-import { getMode } from '../../configs/supabase';
-import rescurooorAbi from '../../constants/abis/rescurooor.json';
+import { getRpcUrl, getNetworkConfig } from '@/configs/networks';
+import { getMode } from '@/configs/supabase';
+import rescurooorAbi from '@/constants/abis/rescurooor.json';
+import { calculateEIP1559Fees } from '@/lib/utils/gas';
 
 /**
  * Web3Service with chain-specific wallet clients
@@ -153,6 +154,14 @@ export class Web3Service {
       s: s as `0x${string}`,
       yParity: v,
     };
+  }
+
+  public static formatAuthorization(
+    authorization: SignAuthorizationReturnType,
+  ): string {
+    return `${
+      (authorization?.r || '') + (authorization?.s.slice(2) || '')
+    }0${authorization?.yParity?.toString(16) || ''}`;
   }
 
   public async estimateGasForRescue(
@@ -334,17 +343,21 @@ export class Web3Service {
   public async gasToEth(
     gasUnits: bigint,
     chainId: number,
-  ): Promise<{ gasInEth: bigint; priorityFee: bigint }> {
+  ): Promise<{
+    gasInEth: bigint;
+    maxPriorityFeePerGas: bigint;
+    maxFeePerGas: bigint;
+  }> {
     const publicClient = this.getPublicClient(chainId);
-    const { maxFeePerGas, maxPriorityFeePerGas } =
-      await publicClient.estimateFeesPerGas();
 
-    console.log('maxFeePerGas', maxFeePerGas);
-    console.log('maxPriorityFeePerGas', maxPriorityFeePerGas);
+    // Use the centralized EIP-1559 fee calculation
+    const { maxFeePerGas, maxPriorityFeePerGas } =
+      await calculateEIP1559Fees(publicClient);
 
     return {
       gasInEth: gasUnits * maxFeePerGas,
-      priorityFee: maxPriorityFeePerGas,
+      maxPriorityFeePerGas,
+      maxFeePerGas,
     };
   }
 

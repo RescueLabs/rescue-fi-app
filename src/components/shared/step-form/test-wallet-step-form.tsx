@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useLocalStorage } from 'usehooks-ts';
-// import { useAccount } from 'wagmi';
 
 import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { STORAGE_KEYS } from '@/constants';
+import { FinalBundleProvider } from '@/context/final-bundle-context';
 import { StageContext } from '@/context/stage-context';
 import { getWalletAddressFromPrivateKey } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
@@ -33,8 +33,6 @@ const getStepContent = (step: number) => {
 };
 
 export const TestWalletStepForm = () => {
-  // const { chain } = useAccount();
-
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
@@ -127,77 +125,79 @@ export const TestWalletStepForm = () => {
 
   return (
     <StageContext.Provider value={contextValue}>
-      <AnimatePresence mode="wait">
-        <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="text-2xl font-semibold"
-          >
-            Rescue Wallet Funds
-          </motion.p>
-
-          <motion.div
-            key={activeStep}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-          >
-            <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
-          </motion.div>
-
-          <FormProvider {...methods}>
-            <form
-              noValidate
-              className="flex w-full flex-col items-center gap-y-10"
+      <FinalBundleProvider>
+        <AnimatePresence mode="wait">
+          <div className="flex w-full flex-col items-center gap-y-10 px-3 py-20">
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-2xl font-semibold"
             >
-              <Card
-                withBackground
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1, delayChildren: 0.5 }}
-                className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
-              >
-                {getStepContent(activeStep)}
-              </Card>
+              Rescue Wallet Funds
+            </motion.p>
 
-              <motion.div
-                key={activeStep}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: 0.2 }}
-                className="flex justify-center space-x-[20px]"
-              >
-                {activeStep !== 3 && (
-                  <Button
-                    type="button"
-                    className="w-[100px]"
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={activeStep === 1}
-                  >
-                    Back
-                  </Button>
-                )}
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
+            </motion.div>
 
-                {activeStep === 1 && (
-                  <Button
-                    type="button"
-                    className="w-[100px]"
-                    disabled={isNextDisabled}
-                    onClick={handleNext}
-                  >
-                    Next
-                  </Button>
-                )}
-              </motion.div>
-            </form>
-          </FormProvider>
-        </div>
-      </AnimatePresence>
+            <FormProvider {...methods}>
+              <form
+                noValidate
+                className="flex w-full flex-col items-center gap-y-10"
+              >
+                <Card
+                  withBackground
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1, delayChildren: 0.5 }}
+                  className="flex h-full w-full max-w-[600px] flex-col overflow-y-hidden px-4 py-4 md:py-8"
+                >
+                  {getStepContent(activeStep)}
+                </Card>
+
+                <motion.div
+                  key={activeStep}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex justify-center space-x-[20px]"
+                >
+                  {activeStep !== 3 && (
+                    <Button
+                      type="button"
+                      className="w-[100px]"
+                      variant="outline"
+                      onClick={handleBack}
+                      disabled={activeStep === 1}
+                    >
+                      Back
+                    </Button>
+                  )}
+
+                  {activeStep === 1 && (
+                    <Button
+                      type="button"
+                      className="w-[100px]"
+                      disabled={isNextDisabled}
+                      onClick={handleNext}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </motion.div>
+              </form>
+            </FormProvider>
+          </div>
+        </AnimatePresence>
+      </FinalBundleProvider>
     </StageContext.Provider>
   );
 };
