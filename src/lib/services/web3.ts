@@ -9,6 +9,7 @@ import {
   type PublicClient,
   type WalletClient,
   type Address,
+  nonceManager,
 } from 'viem';
 import {
   privateKeyToAccount,
@@ -60,7 +61,9 @@ export class Web3Service {
     if (!privateKey) {
       throw new Error('BACKEND_PRIVATE_KEY environment variable is required');
     }
-    this.account = privateKeyToAccount(privateKey);
+    // this account will use the nonceManager to get the nonce from the chain
+    // and increment it for each transaction
+    this.account = privateKeyToAccount(privateKey, { nonceManager });
 
     // Initialize public and wallet clients for each chain
     Object.entries(networks).forEach(([name, chain]) => {
