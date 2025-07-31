@@ -1,11 +1,11 @@
-import { getContract } from 'viem';
+import { encodePacked, keccak256 } from 'viem';
 import {
   privateKeyToAccount,
   SignAuthorizationReturnType,
   nonceManager,
 } from 'viem/accounts';
+import { getStorageAt } from 'viem/actions';
 
-import rescuroorAbi from '@/constants/abis/rescurooor.json';
 import { web3Service } from '@/lib/services/web3';
 
 const compromisedKey =
@@ -18,7 +18,6 @@ async function signStuff() {
   const publicClient = web3Service.getPublicClient(chainId);
 
   let authorization: SignAuthorizationReturnType | undefined;
-  let nonce: bigint;
 
   const isDelegated = await web3Service.isDelegated(eoa.address, chainId);
 
@@ -27,25 +26,26 @@ async function signStuff() {
       account: eoa,
       contractAddress: process.env.RESCUROOOR_CONTRACT_ADDRESS as `0x${string}`,
     });
-    nonce = BigInt(0);
-  } else {
-    const rescuroorDelegate = getContract({
-      address: eoa.address as `0x${string}`,
-      abi: rescuroorAbi,
-      client: publicClient,
-    });
-    // Seems Alchemy caches call responses so we add the block number to the call
-    const blockNumber = await publicClient.getBlockNumber({
-      cacheTime: 0,
-    });
-    console.log('blockNumber', blockNumber);
-    nonce = (await rescuroorDelegate.read.nonces([eoa.address], {
-      blockNumber,
-      blockTag: 'pending',
-    })) as bigint;
   }
 
-  console.log('nonce', nonce);
+  // This method is used to get the nonce in case if a wallet formerly delegated to the Rescuerooor contract has been redelegated
+  // to a different address.
+  const slotPosition = BigInt(2); // slot position of the nonces mapping in Rescuerooor contract
+  // Encode packed data
+  const encoded = encodePacked(
+    ['uint256', 'uint256'], // Use 'address' type for the first parameter
+    [BigInt(eoa.address), slotPosition],
+  );
+
+  // Hash the encoded data
+  const nonceSlotPosition = keccak256(encoded);
+
+  const nonce = await getStorageAt(publicClient, {
+    address: eoa.address,
+    slot: nonceSlotPosition,
+  });
+
+  console.log('nonce', BigInt(nonce || 0));
 
   // "RescueErc20(address caller,address recipient,address[] tokens,uint256 deadline,uint256 nonce)";
   const signature = await eoa.signTypedData({
@@ -70,33 +70,7 @@ async function signStuff() {
       recipient: '0x3FE8A6792047D5893ae49c65dFb0fA66aa286802',
       tokens: ['0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d'],
       deadline: BigInt(1e18),
-      nonce,
-    },
-  });
-
-  console.log({
-    domain: {
-      name: 'Rescuerooor',
-      version: '1',
-      chainId,
-      verifyingContract: eoa.address,
-    },
-    types: {
-      RescueErc20: [
-        { name: 'caller', type: 'address' },
-        { name: 'recipient', type: 'address' },
-        { name: 'tokens', type: 'address[]' },
-        { name: 'deadline', type: 'uint256' },
-        { name: 'nonce', type: 'uint256' },
-      ],
-    },
-    primaryType: 'RescueErc20',
-    message: {
-      caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
-      recipient: '0x3FE8A6792047D5893ae49c65dFb0fA66aa286802',
-      tokens: ['0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d'],
-      deadline: BigInt(1e18),
-      nonce,
+      nonce: BigInt(nonce || 0),
     },
   });
 
