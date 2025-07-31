@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getContract } from 'viem';
+import { encodePacked, keccak256 } from 'viem';
+import { getStorageAt } from 'viem/actions';
 
-import rescuroorAbi from '@/constants/abis/rescurooor.json';
 import { Web3Service } from '@/lib/services/web3';
 
 export async function GET(
@@ -24,24 +24,25 @@ export async function GET(
   const isDelegated = await web3Service.isDelegated(address, Number(chainId));
   const publicClient = web3Service.getPublicClient(Number(chainId));
 
-  let nonce = '0';
+  let nonce = 0;
 
   if (isDelegated) {
-    const rescuroorDelegate = getContract({
-      address: address as `0x${string}`,
-      abi: rescuroorAbi,
-      client: publicClient,
-    });
-    const blockNumber = await publicClient.getBlockNumber({
-      cacheTime: 0,
+    const slotPosition = BigInt(2); // slot position of the nonces mapping in Rescuerooor contract
+    // Encode packed data
+    const encoded = encodePacked(
+      ['uint256', 'uint256'], // Use 'address' type for the first parameter
+      [BigInt(address), slotPosition],
+    );
+
+    // Hash the encoded data
+    const nonceSlotPosition = keccak256(encoded);
+
+    const nonceHex = await getStorageAt(publicClient, {
+      address,
+      slot: nonceSlotPosition,
     });
 
-    const nonceNum = (await rescuroorDelegate.read.nonces([address], {
-      blockNumber,
-      blockTag: 'pending',
-    })) as number;
-
-    nonce = nonceNum.toString();
+    nonce = Number(nonceHex);
   }
 
   return NextResponse.json({
