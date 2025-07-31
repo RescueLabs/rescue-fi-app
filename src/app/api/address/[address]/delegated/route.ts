@@ -24,26 +24,22 @@ export async function GET(
   const isDelegated = await web3Service.isDelegated(address, Number(chainId));
   const publicClient = web3Service.getPublicClient(Number(chainId));
 
-  let nonce = 0;
+  const slotPosition = BigInt(2); // slot position of the nonces mapping in Rescuerooor contract
+  // Encode packed data
+  const encoded = encodePacked(
+    ['uint256', 'uint256'], // Use 'address' type for the first parameter
+    [BigInt(address), slotPosition],
+  );
 
-  if (isDelegated) {
-    const slotPosition = BigInt(2); // slot position of the nonces mapping in Rescuerooor contract
-    // Encode packed data
-    const encoded = encodePacked(
-      ['uint256', 'uint256'], // Use 'address' type for the first parameter
-      [BigInt(address), slotPosition],
-    );
+  // Hash the encoded data
+  const nonceSlotPosition = keccak256(encoded);
 
-    // Hash the encoded data
-    const nonceSlotPosition = keccak256(encoded);
+  const nonceHex = await getStorageAt(publicClient, {
+    address,
+    slot: nonceSlotPosition,
+  });
 
-    const nonceHex = await getStorageAt(publicClient, {
-      address,
-      slot: nonceSlotPosition,
-    });
-
-    nonce = Number(nonceHex);
-  }
+  const nonce = Number(nonceHex);
 
   return NextResponse.json({
     isDelegated,
