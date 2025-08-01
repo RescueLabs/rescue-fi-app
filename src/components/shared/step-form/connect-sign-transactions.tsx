@@ -23,7 +23,12 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ACCEPTED_CHAIN_MAP, QUERY_KEYS, STORAGE_KEYS } from '@/constants';
+import {
+  ACCEPTED_CHAIN_MAP,
+  CHAINS,
+  QUERY_KEYS,
+  STORAGE_KEYS,
+} from '@/constants';
 import RESCUER_ABI from '@/constants/abis/rescuer.json';
 import { useFinalBundleContext } from '@/context/final-bundle-context';
 import { useStageContext } from '@/context/stage-context';
@@ -153,6 +158,15 @@ const CalculateGasFeesAndSendFunds = ({
   );
 
   const { chain } = useAccount();
+
+  console.log(
+    _authorizationSignature,
+    'authorizationSignature',
+    chain?.id,
+    rescueErc20Data,
+    authorizationNonce,
+    victimWalletAddress,
+  );
 
   const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
     gasInEth: string;
@@ -293,6 +307,10 @@ export const ConnectSignTransactions = () => {
     STORAGE_KEYS.victimAddress,
     null,
   );
+  const [selectedChainId] = useLocalStorage<number>(
+    STORAGE_KEYS.selectedChainId,
+    CHAINS[0].id,
+  );
   const [victimPrivateKey] = useLocalStorage<`0x${string}` | null>(
     STORAGE_KEYS.victimPrivateKey,
     null,
@@ -417,7 +435,7 @@ export const ConnectSignTransactions = () => {
         recipient: receiverWalletAddress,
         tokens: rescueTokenAddresses,
         deadline,
-        nonce: BigInt(delegatedDetails?.nonce || '-1'),
+        nonce: BigInt(delegatedDetails?.nonce || '0'),
       },
     });
 
@@ -461,7 +479,8 @@ export const ConnectSignTransactions = () => {
               setStage(2);
             }}
             isValidAddress={(address?: `0x${string}`) =>
-              address?.toLowerCase() !== victimWalletAddress?.toLowerCase()
+              address?.toLowerCase() !== victimWalletAddress?.toLowerCase() &&
+              chain?.id === selectedChainId
             }
             setAddressOnLocalStorage={setFunderAddress}
             titleMessage="Please connect a [safe] wallet to send funds."
@@ -475,8 +494,11 @@ export const ConnectSignTransactions = () => {
                 fees.
               </span>
             }
-            validAddressMessage="You are connected to the victim wallet, please connect to a
-            different wallet"
+            validAddressMessage={
+              chain?.id === selectedChainId
+                ? 'You are connected to the victim wallet, please connect to a different wallet'
+                : 'You are connected to the wrong chain, please connect to the correct chain'
+            }
           />
         );
       case 2:
@@ -498,7 +520,14 @@ export const ConnectSignTransactions = () => {
         return 'Unknown stage';
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, authorizationSignature, eip712Signature, delegatedDetails]);
+  }, [
+    stage,
+    authorizationSignature,
+    eip712Signature,
+    delegatedDetails,
+    chain,
+    selectedChainId,
+  ]);
 
   return (
     <div className="flex flex-col gap-8">

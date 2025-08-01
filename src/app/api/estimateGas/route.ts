@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getMode } from '@/configs/supabase';
+import { getMode } from '@/configs/app';
 import { DatabaseService } from '@/lib/services/database';
 import { web3Service, Web3Service } from '@/lib/services/web3';
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!data || data.length <= 650) {
+    if (!data || data.length < 650) {
       console.error('Invalid data format', data);
       return NextResponse.json(
         {

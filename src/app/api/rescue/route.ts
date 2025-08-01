@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getMode, shouldUseDatabase } from '@/configs/supabase';
+import { getMode } from '@/configs/app';
+import { shouldUseDatabase } from '@/configs/supabase';
 import { DatabaseService } from '@/lib/services/database';
 import { RescueService } from '@/lib/services/rescue';
 import { TransactionService } from '@/lib/services/transactionService';

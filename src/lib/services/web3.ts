@@ -16,9 +16,10 @@ import {
   SignAuthorizationReturnType,
 } from 'viem/accounts';
 
+import { getMode } from '../../configs/app';
 import { getRpcUrl, getNetworkConfig } from '../../configs/networks';
-import { getMode, AppMode } from '../../configs/supabase';
 import rescurooorAbi from '../../constants/abis/rescurooor.json';
+import { AppMode } from '../../types/app';
 import { calculateEIP1559Fees } from '../utils/gas';
 
 /**
@@ -75,7 +76,10 @@ export class Web3Service {
           chain: chain as any,
           transport: http(rpcUrl),
         });
-        this.publicClients.set(chain.id, publicClient as PublicClient);
+        this.publicClients.set(
+          chain.id as number,
+          publicClient as PublicClient,
+        );
 
         // Create wallet client for this chain (shares the same account)
         const walletClient = createWalletClient({
@@ -83,7 +87,7 @@ export class Web3Service {
           transport: http(rpcUrl),
           chain: chain as any,
         });
-        this.walletClients.set(chain.id, walletClient);
+        this.walletClients.set(chain.id as number, walletClient);
       }
     });
   }

@@ -11,7 +11,7 @@ import {
   optimismSepolia,
 } from 'viem/chains';
 
-import { AppMode } from './supabase';
+import { AppMode } from '@/types/app';
 
 const MAINNET_CHAINS = {
   ethereum: mainnet,

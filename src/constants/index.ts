@@ -1,17 +1,8 @@
 import { Interface } from 'ethers';
-import {
-  sepolia,
-  mainnet,
-  optimismSepolia,
-  optimism,
-  base,
-  bsc,
-  arbitrum,
-  bscTestnet,
-  baseSepolia,
-  arbitrumSepolia,
-  Chain,
-} from 'viem/chains';
+import { sepolia, mainnet, Chain } from 'viem/chains';
+
+import { getMode } from '@/configs/app';
+import { NETWORKS } from '@/configs/networks';
 
 import {
   getSepoliaMevShareClient,
@@ -100,6 +91,7 @@ export const STORAGE_KEYS = {
   gasFeeAmount: 'rescuefi-gasFeeAmount',
   authorizationSignature: 'rescuefi-authorizationSignature',
   eip712Signature: 'rescuefi-eip712Signature',
+  selectedChainId: 'rescuefi-selectedChainId',
 
   // airdrop
   airdropContractAddress: 'rescuefi-airdropContractAddress',
@@ -115,18 +107,7 @@ export const QUERY_KEYS = {
 export const BACKEND_WALLET_ADDRESS =
   '0x0000000000000000000000000000000000000000';
 
-export const TEST_CHAINS = [
-  sepolia,
-  arbitrumSepolia,
-  bscTestnet,
-  baseSepolia,
-  optimismSepolia,
-];
-
-export const MAINNET_CHAINS = [mainnet, arbitrum, bsc, base, optimism];
-
-export const CHAINS: Chain[] =
-  process.env.NODE_ENV === 'production' ? MAINNET_CHAINS : TEST_CHAINS;
+export const CHAINS: Chain[] = Object.values(NETWORKS[getMode()]);
 
 export const ACCEPTED_CHAIN_MAP = new Set(CHAINS.map((chain) => chain.id));
 
