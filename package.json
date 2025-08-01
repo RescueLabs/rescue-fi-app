@@ -33,8 +33,6 @@
     ]
   },
   "dependencies": {
-    "@flashbots/ethers-provider-bundle": "^1.0.0",
-    "@flashbots/mev-share-client": "^0.7.13",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-hover-card": "^1.1.14",
