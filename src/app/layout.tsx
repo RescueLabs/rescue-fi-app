@@ -5,7 +5,6 @@ import NextTopLoader from 'nextjs-toploader';
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
 import { RainbowKitClientProvider } from '@/components/layout/rainbow-kit-provider';
-import { RpcEnforcerProvider } from '@/components/rpc-enforcer-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -67,26 +66,24 @@ const RootLayout = ({
         <RainbowKitClientProvider cookie={cookie}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <SidebarProvider>
-              <RpcEnforcerProvider>
-                <ScrollArea className="h-screen w-screen">
-                  <div className="w-full bg-transparent px-0 py-0 md:p-4">
-                    <div
-                      className={cn(
-                        'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
-                      )}
-                    >
-                      <DashboardSidebar />
-                      <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
-                        {/* <ConnectWalletButton /> */}
+              <ScrollArea className="h-screen w-screen">
+                <div className="w-full bg-transparent px-0 py-0 md:p-4">
+                  <div
+                    className={cn(
+                      'relative z-[1] flex w-screen flex-1 flex-col gap-x-6 overflow-hidden md:h-[calc(100dvh-32px)] md:w-[calc(100vw-32px)] md:flex-row',
+                    )}
+                  >
+                    <DashboardSidebar />
+                    <main className="flex flex-1 flex-col pt-[60px] md:pt-0">
+                      {/* <ConnectWalletButton /> */}
 
-                        {children}
+                      {children}
 
-                        <Footer />
-                      </main>
-                    </div>
+                      <Footer />
+                    </main>
                   </div>
-                </ScrollArea>
-              </RpcEnforcerProvider>
+                </div>
+              </ScrollArea>
             </SidebarProvider>
           </ThemeProvider>
         </RainbowKitClientProvider>

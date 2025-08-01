@@ -1,9 +1,7 @@
 'use client';
 
-import { BundleParams } from '@flashbots/mev-share-client';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
-import { parseUnits } from 'ethers';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
@@ -12,15 +10,12 @@ import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ERC20_INTERFACE } from '@/constants';
-import { useClaimAirdropBundle } from '@/hooks/use-claim-airdrop-bundle';
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useGasPrice } from '@/hooks/use-gas-Price';
-import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
 import { useTokenDetails } from '@/hooks/use-token-details';
 import {
   getPrivateKeyAccount,
   getPublicClient,
-  getWalletAddressFromPrivateKey,
   roundToFiveDecimals,
   validatePrivateKey,
   validateTokenAddress,
@@ -85,7 +80,7 @@ export const AirdropStepForm = () => {
     formState: { isValid },
   } = methods;
 
-  const { getTokenDetails } = useTokenDetails();
+  const { getTokenDetails: _getTokenDetails } = useTokenDetails();
   const { maxFeePerGas, maxPriorityFeePerGas } = useGasPrice();
   const {
     ethBalanceEnough,
@@ -153,48 +148,15 @@ export const AirdropStepForm = () => {
     victimPrivateKey,
   ]);
 
-  const { sendBundle, watchBundle, success, failed, loading } =
-    useClaimAirdropBundle();
-  const { simulateBundle } = useSimulateBundle();
-
   const onSubmit = async (formData: StepperFormValues) => {
     try {
       if (!ethBalanceEnough) return;
 
       setActiveStep(4);
 
-      const calcGas = await calculateGas();
-
-      const tokenDetails = await getTokenDetails(
-        tokenAddress,
-        getWalletAddressFromPrivateKey(formData.victimPrivateKey),
-        formData.receiverWalletAddress,
-      );
-
-      if (!tokenDetails) return;
-
-      const { decimals } = tokenDetails;
-
-      const { bundleHash, txHashes, bundle, maxBlockNumber } = await sendBundle(
-        {
-          victimPrivateKey: formData.victimPrivateKey,
-          rescuerPrivateKey,
-          receiverAddress: formData.receiverWalletAddress,
-          tokenAddress,
-          airdropContractAddress: formData.airdropContractAddress,
-          data: formData.callData,
-          txGases: calcGas?.txGases ?? [BigInt(21000), BigInt(0), BigInt(0)],
-          amount: BigInt(parseUnits(formData.amountToSalvage, decimals)),
-          maxFeePerGas: calcGas?.maxFeePerGas ?? BigInt(0),
-          maxPriorityFeePerGas: calcGas?.maxPriorityFeePerGas ?? BigInt(0),
-          totalGas: calcGas?.totalGas ?? BigInt(0),
-        },
-      );
-
-      if (bundleHash) {
-        simulateBundle(bundle as BundleParams['body']);
-        watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
-      }
+      // TODO: Implement airdrop rescue logic using the secure endpoints
+      // This will use the rescue API endpoint instead of Flashbots bundles
+      console.log('Test airdrop rescue form submitted:', formData);
     } catch (error: any) {
       setErrorSubmitting(true);
       console.log(error);
@@ -294,13 +256,7 @@ export const AirdropStepForm = () => {
               {activeStep === 4 ? (
                 <FormRescueFundsLoading
                   formRescueFundsLoadingStatus={
-                    success
-                      ? 'success'
-                      : failed || errorSubmitting
-                        ? 'error'
-                        : loading
-                          ? 'loading'
-                          : 'loading'
+                    errorSubmitting ? 'error' : 'loading'
                   }
                   balanceUrl={`https://sepolia.etherscan.io/token/${tokenAddress}?a=${receiverWalletAddress}`}
                   tryAgain={() => {

@@ -1,6 +1,5 @@
 'use client';
 
-import { BundleParams } from '@flashbots/mev-share-client';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { IconLoader2 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -13,9 +12,6 @@ import { Card } from '@/components/ui/card';
 import { ERC20_INTERFACE, NETWORK } from '@/constants';
 import { useEthBalance } from '@/hooks/use-eth-balance';
 import { useGasPrice } from '@/hooks/use-gas-Price';
-import { useRescueTokenBundle } from '@/hooks/use-rescue-token-bundle';
-import { useSimulateBundle } from '@/hooks/use-simulate-bundle';
-import { useTokenDetails } from '@/hooks/use-token-details';
 import {
   getPrivateKeyAccount,
   getPublicClient,
@@ -72,8 +68,6 @@ export const WalletStepForm = () => {
     formState: { isSubmitting, isValid },
   } = methods;
 
-  const { getTokenDetails } = useTokenDetails();
-
   const {
     ethBalanceEnough,
     ethRemainingBalance,
@@ -98,48 +92,6 @@ export const WalletStepForm = () => {
   const handleBack = useCallback(() => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
-
-  const { sendBundle, loading, success, failed, watchBundle } =
-    useRescueTokenBundle();
-  const { simulateBundle } = useSimulateBundle();
-
-  const sendBundleAndWatch = useCallback(
-    async ({
-      receiverAddress,
-      amount,
-    }: {
-      victimPrivateKey: `0x${string}`;
-      receiverAddress: `0x${string}`;
-      amount: bigint;
-    }) => {
-      const { txHashes, bundle, bundleHash, maxBlockNumber } = await sendBundle(
-        {
-          victimPrivateKey,
-          rescuerPrivateKey,
-          receiverAddress,
-          tokenAddress,
-          amount,
-          maxFeePerGas: gasDetails?.maxFeePerGas ?? BigInt(0),
-          maxPriorityFeePerGas: gasDetails?.maxPriorityFeePerGas ?? BigInt(0),
-          gas: gasDetails?.totalGas ?? BigInt(0),
-        },
-      );
-
-      if (bundleHash) {
-        await simulateBundle(bundle as BundleParams['body']);
-        watchBundle(txHashes[0] as `0x${string}`, maxBlockNumber);
-      }
-    },
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      rescuerPrivateKey,
-      tokenAddress,
-      gasDetails?.maxFeePerGas,
-      gasDetails?.maxPriorityFeePerGas,
-      gasDetails?.totalGas,
-    ],
-  );
 
   const calculateGas = useCallback(async () => {
     const publicClient = getPublicClient();
@@ -175,16 +127,9 @@ export const WalletStepForm = () => {
 
       setActiveStep(3);
 
-      const tokenDetails = await getTokenDetails(tokenAddress, '0x');
-      const decimals = tokenDetails?.decimals;
-
-      sendBundleAndWatch({
-        victimPrivateKey: formData.victimPrivateKey,
-        receiverAddress: formData.receiverWalletAddress,
-        amount: BigInt(
-          Number(formData.amountToSalvage) * 10 ** Number(decimals ?? 18),
-        ),
-      });
+      // TODO: Implement rescue logic using the secure endpoints
+      // This will use the rescue API endpoint instead of Flashbots bundles
+      console.log('Rescue form submitted:', formData);
     } catch (error: any) {
       setErrorSubmitting(true);
       console.log(error);
@@ -282,13 +227,7 @@ export const WalletStepForm = () => {
               {activeStep === 3 ? (
                 <FormRescueFundsLoading
                   formRescueFundsLoadingStatus={
-                    success
-                      ? 'success'
-                      : failed || errorSubmitting
-                        ? 'error'
-                        : loading
-                          ? 'loading'
-                          : 'loading'
+                    errorSubmitting ? 'error' : 'loading'
                   }
                   tryAgain={() => {
                     setErrorSubmitting(false);

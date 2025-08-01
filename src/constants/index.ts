@@ -13,11 +13,6 @@ import {
   Chain,
 } from 'viem/chains';
 
-import {
-  getSepoliaMevShareClient,
-  getEthereumMevShareClient,
-} from '../lib/flashbots';
-
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK;
 
 export const CHAIN_IDS = {
@@ -34,22 +29,11 @@ export const RPC_URLS = {
   11155111: 'https://ethereum-sepolia-rpc.publicnode.com',
 };
 
-export const FLASHBOTS_RPC_URLS = {
-  1: 'https://rpc.flashbots.net/fast',
-  11155111: 'https://rpc-sepolia.flashbots.net/',
-};
-
-export const RELAY_URLS = {
-  1: 'https://relay.flashbots.net',
-  11155111: 'https://relay-sepolia.flashbots.net',
-};
 export const AVG_SEPOLIA_BLOCK_TIME = 13;
 export const MAX_BLOCK_NUMBER = 24;
 export const SEPOLIA_CHAIN_ID = 11155111;
 export const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-export const MEV_AUTH_SIGNER_PRIVATE_KEY = process.env
-  .MEV_AUTH_SIGNER_PRIVATE_KEY as `0x${string}`;
 
 export const ETHERSCAN_URLS = {
   1: 'https://api.etherscan.io',
@@ -58,13 +42,6 @@ export const ETHERSCAN_URLS = {
 export const ACCEPTED_CHAIN = {
   1: mainnet,
   11155111: sepolia,
-};
-export const MEV_CLIENT = {
-  1: getEthereumMevShareClient(MEV_AUTH_SIGNER_PRIVATE_KEY, RPC_URLS[1]),
-  11155111: getSepoliaMevShareClient(
-    MEV_AUTH_SIGNER_PRIVATE_KEY,
-    RPC_URLS[11155111],
-  ),
 };
 
 export const ERC20_INTERFACE = new Interface([
@@ -96,7 +73,7 @@ export const STORAGE_KEYS = {
   receiverAddress: 'rescuefi-receiverAddress',
   funderAddress: 'rescuefi-funderAddress',
   selectedTokens: 'rescuefi-selectedTokens',
-  bundleId: 'rescuefi-bundleId',
+
   gasFeeAmount: 'rescuefi-gasFeeAmount',
   authorizationSignature: 'rescuefi-authorizationSignature',
   eip712Signature: 'rescuefi-eip712Signature',

@@ -13,7 +13,7 @@ const compromisedKey =
 const eoa = privateKeyToAccount(compromisedKey, { nonceManager });
 
 async function signStuff() {
-  const chainId = 11155111;
+  const chainId = 84532;
   const walletClient = web3Service.getWalletClient(chainId);
   const publicClient = web3Service.getPublicClient(chainId);
 
@@ -68,7 +68,7 @@ async function signStuff() {
     message: {
       caller: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
       recipient: '0x3FE8A6792047D5893ae49c65dFb0fA66aa286802',
-      tokens: ['0xBd1899694F09EbcF2a1F3bB2DB74E570d894FC5d'],
+      tokens: ['0xbc65d0eE71E10e935eF9E35bD3bA333C898b08de'],
       deadline: BigInt(1e18),
       nonce: BigInt(nonce || 0),
     },
