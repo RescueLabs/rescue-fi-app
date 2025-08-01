@@ -208,12 +208,24 @@ export class Web3Service {
         data,
         account: walletClient.account,
         authorizationList,
+        stateOverride: [
+          {
+            address: walletClient.account?.address as `0x${string}`,
+            balance: parseEther('1'),
+          },
+        ],
       });
     } else {
       estimatedGas = await publicClient.estimateGas({
         to: compromisedAddress,
         data,
         account: walletClient.account,
+        stateOverride: [
+          {
+            address: walletClient.account?.address as `0x${string}`,
+            balance: parseEther('1'),
+          },
+        ],
       });
     }
     return estimatedGas;

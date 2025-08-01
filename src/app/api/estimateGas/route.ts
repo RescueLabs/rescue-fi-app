@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseEther } from 'viem';
 
 import { getMode } from '@/configs/supabase';
 import { DatabaseService } from '@/lib/services/database';
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!data || data.length <= 650) {
+    if (!data || data.length < 650) {
       console.error('Invalid data format', data);
       return NextResponse.json(
         {
@@ -89,12 +90,24 @@ export async function GET(request: NextRequest) {
         to: compromisedAddress as `0x${string}`,
         data: data as `0x${string}`,
         authorizationList,
+        stateOverride: [
+          {
+            address: walletClient.account?.address as `0x${string}`,
+            balance: parseEther('1'),
+          },
+        ],
       });
     } else {
       gas = await publicClient.estimateGas({
         account: walletClient.account,
         to: compromisedAddress as `0x${string}`,
         data: data as `0x${string}`,
+        stateOverride: [
+          {
+            address: walletClient.account?.address as `0x${string}`,
+            balance: parseEther('1'),
+          },
+        ],
       });
     }
 
@@ -117,10 +130,10 @@ export async function GET(request: NextRequest) {
       gasInEth: gasInEth.toString(),
       maxFeePerGas: gasData.maxFeePerGas.toString(),
       maxPriorityFeePerGas: gasData.maxPriorityFeePerGas.toString(),
-      balance,
-      deficit: balance > gasInEth ? 0 : gasInEth - balance,
+      balance: balance.toString(),
+      deficit: (balance > gasInEth ? 0 : gasInEth - balance).toString(),
     };
-
+    console.log('gasData', _gasData);
     return NextResponse.json({
       ..._gasData,
     });
