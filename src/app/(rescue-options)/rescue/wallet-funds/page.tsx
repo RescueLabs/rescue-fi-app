@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   title: 'RescueFi | Rescue wallet funds',
 };
 
-const TestWalletStepForm = dynamic(
+const WalletStepForm = dynamic(
   () =>
-    import('@/components/shared/step-form/test-wallet-step-form').then(
+    import('@/components/shared/step-form/wallet-step-form').then(
       (mod) => mod.TestWalletStepForm,
     ),
   {
@@ -22,7 +22,7 @@ const RescueWalletFundsPage = () => {
   return (
     <ScrollArea className="flex h-[calc(100dvh-60px)] w-full flex-col gap-y-7 overflow-y-auto overflow-x-hidden md:h-full">
       <Suspense fallback={null}>
-        <TestWalletStepForm />
+        <WalletStepForm />
       </Suspense>
     </ScrollArea>
   );

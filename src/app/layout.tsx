@@ -1,10 +1,10 @@
 import { Onest } from 'next/font/google';
+import { headers } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
 import { RainbowKitClientProvider } from '@/components/layout/rainbow-kit-provider';
-import { RpcEnforcerProvider } from '@/components/rpc-enforcer-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -55,15 +55,17 @@ const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) => (
-  <html lang="en" suppressHydrationWarning>
-    <head />
-    <body className={cn(onest.variable)}>
-      <NextTopLoader showSpinner={false} color="#a855f7" />
-      <RainbowKitClientProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <SidebarProvider>
-            <RpcEnforcerProvider>
+}>) => {
+  const cookie = headers().get('cookie') ?? '';
+
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className={cn(onest.variable)}>
+        <NextTopLoader showSpinner={false} color="#a855f7" />
+        <RainbowKitClientProvider cookie={cookie}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <SidebarProvider>
               <ScrollArea className="h-screen w-screen">
                 <div className="w-full bg-transparent px-0 py-0 md:p-4">
                   <div
@@ -82,13 +84,13 @@ const RootLayout = ({
                   </div>
                 </div>
               </ScrollArea>
-            </RpcEnforcerProvider>
-          </SidebarProvider>
-        </ThemeProvider>
-      </RainbowKitClientProvider>
-      <Toaster />
-    </body>
-  </html>
-);
+            </SidebarProvider>
+          </ThemeProvider>
+        </RainbowKitClientProvider>
+        <Toaster />
+      </body>
+    </html>
+  );
+};
 
 export default RootLayout;

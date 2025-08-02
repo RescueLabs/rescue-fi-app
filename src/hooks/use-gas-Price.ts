@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 
-import { CHAIN_ID, RPC_URLS } from '@/lib/constants';
+import { CHAIN_ID, RPC_URLS } from '@/constants';
 
 export const useGasPrice = () => {
   const provider = useMemo(() => new JsonRpcProvider(RPC_URLS[CHAIN_ID]), []);

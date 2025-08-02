@@ -1,55 +1,54 @@
 'use client';
 
-import {
-  IconHourglass,
-  IconCircleCheck,
-  IconCircleX,
-} from '@tabler/icons-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Check, Loader as LucideLoader } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export type FormRescueFundsLoadingStatus = 'loading' | 'success' | 'error';
 
-const Particle = ({ index }: { index: number }) => {
-  const randomDelay = Math.random() * 2;
-  return (
-    <motion.div
-      className="absolute h-2 w-2 rounded-full bg-purple-300"
-      animate={{
-        y: [0, -100, 0],
-        x: [0, Math.random() * 100 - 50, 0],
-        opacity: [0, 1, 0],
-        scale: [0, 1, 0],
-      }}
-      transition={{
-        duration: 3,
-        repeat: Infinity,
-        delay: randomDelay,
-        ease: 'easeInOut',
-      }}
-      style={{
-        left: `${Math.random() * 100}%`,
-        top: '100%',
-      }}
-    />
-  );
-};
+type StepStatus = 'pending' | 'active' | 'completed';
 
-const IconWrapper = ({ children }: { children: React.ReactNode }) => (
-  <motion.div
-    className="relative mb-8"
-    initial={{ scale: 0 }}
-    animate={{ scale: 1 }}
-    exit={{ scale: 0 }}
-    transition={{ duration: 0.5 }}
-  >
-    <div className="absolute left-0 top-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-50 blur-md" />
-    {children}
-  </motion.div>
-);
+interface Step {
+  id: string;
+  message: string;
+  status: StepStatus;
+}
+
+const RESCUE_STEPS = [
+  {
+    id: '1',
+    message: 'Initializing rescue protocol',
+    status: 'pending' as StepStatus,
+  },
+  {
+    id: '2',
+    message: 'Analyzing wallet vulnerabilities',
+    status: 'pending' as StepStatus,
+  },
+  {
+    id: '3',
+    message: 'Preparing secure transaction bundle',
+    status: 'pending' as StepStatus,
+  },
+  {
+    id: '4',
+    message: 'Validating rescue parameters',
+    status: 'pending' as StepStatus,
+  },
+  {
+    id: '5',
+    message: 'Executing fund recovery',
+    status: 'pending' as StepStatus,
+  },
+  {
+    id: '6',
+    message: 'Confirming transaction success',
+    status: 'pending' as StepStatus,
+  },
+];
 
 export const FormRescueFundsLoading = ({
   formRescueFundsLoadingStatus,
@@ -60,185 +59,214 @@ export const FormRescueFundsLoading = ({
   tryAgain?: () => void;
   balanceUrl?: string;
 }) => {
-  const [particles, setParticles] = useState<number[]>([]);
+  const [steps, setSteps] = useState<Step[]>(RESCUE_STEPS);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [shouldCompleteSteps, setShouldCompleteSteps] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Handle step progression
   useEffect(() => {
-    setParticles(Array.from({ length: 20 }, (_, i) => i));
+    if (formRescueFundsLoadingStatus === 'loading') {
+      // Start the step progression
+      intervalRef.current = setInterval(() => {
+        setCurrentStepIndex((prevIndex) => {
+          const nextIndex = prevIndex + 1;
+
+          // Update step statuses
+          setSteps((prevSteps) =>
+            prevSteps.map((step, index) => ({
+              ...step,
+              status:
+                index < prevIndex
+                  ? 'completed'
+                  : index === prevIndex
+                    ? 'active'
+                    : 'pending',
+            })),
+          );
+
+          // If we've reached the last step, stop progressing
+          if (nextIndex >= RESCUE_STEPS.length) {
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
+            return prevIndex; // Stay on last step
+          }
+
+          return nextIndex;
+        });
+      }, 2000); // 2 seconds per step
+    } else if (
+      formRescueFundsLoadingStatus === 'success' &&
+      intervalRef.current
+    ) {
+      // If loading finished, complete remaining steps quickly
+      setShouldCompleteSteps(true);
+      clearInterval(intervalRef.current);
+    } else if (
+      formRescueFundsLoadingStatus === 'error' &&
+      intervalRef.current
+    ) {
+      // Clear interval on error
+      clearInterval(intervalRef.current);
+      setCurrentStepIndex(0);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [formRescueFundsLoadingStatus]);
+
+  // Handle completing remaining steps on success
+  useEffect(() => {
+    if (shouldCompleteSteps) {
+      const completeRemainingSteps = () => {
+        setSteps((prevSteps) =>
+          prevSteps.map((step) => ({
+            ...step,
+            status: 'completed' as StepStatus,
+          })),
+        );
+        setCurrentStepIndex(RESCUE_STEPS.length);
+      };
+
+      // Small delay to show completion animation
+      const timeout = setTimeout(completeRemainingSteps, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [shouldCompleteSteps]);
+
+  // Initialize first step as active
+  useEffect(() => {
+    setSteps((prevSteps) =>
+      prevSteps.map((step, index) => ({
+        ...step,
+        status: index === 0 ? 'active' : 'pending',
+      })),
+    );
   }, []);
 
-  const getFormRescueFundsLoadingStatusContent = (
-    currentFormRescueFundsLoadingStatus: FormRescueFundsLoadingStatus,
-  ) => {
-    switch (currentFormRescueFundsLoadingStatus) {
-      case 'loading':
-        return {
-          icon: (
-            <IconHourglass
-              size={80}
-              className="relative z-10 text-purple-400"
-            />
-          ),
-          text: 'Rescuing Funds',
-          subtext: 'In Progress',
-        };
-      case 'success':
-        return {
-          icon: (
-            <IconCircleCheck
-              size={80}
-              className="relative z-10 text-green-400"
-            />
-          ),
-          text: 'Rescue Successful',
-          subtext: 'Funds Secured',
-        };
-      case 'error':
-        return {
-          icon: (
-            <IconCircleX size={80} className="relative z-10 text-red-400" />
-          ),
-          text: 'Rescue Failed',
-          subtext: 'Error Occurred, Please Try Again',
-        };
-      default:
-        return {
-          icon: (
-            <IconHourglass
-              size={80}
-              className="relative z-10 text-purple-400"
-            />
-          ),
-          text: 'Rescuing Funds',
-          subtext: 'In Progress',
-        };
-    }
-  };
-
-  const { icon, text, subtext } = getFormRescueFundsLoadingStatusContent(
-    formRescueFundsLoadingStatus,
-  );
-
-  return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
-      {formRescueFundsLoadingStatus === 'loading' && (
-        <>
-          {particles.map((index) => (
-            <Particle key={index} index={index} />
-          ))}
-        </>
-      )}
-      <AnimatePresence mode="wait">
-        <IconWrapper key={formRescueFundsLoadingStatus}>
-          {formRescueFundsLoadingStatus === 'loading' ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+  // Show error state immediately
+  if (formRescueFundsLoadingStatus === 'error') {
+    return (
+      <div className="flex w-full max-w-[600px] flex-col items-center gap-y-2">
+        <div className="w-full rounded-lg p-4">
+          <div className="mb-2 flex items-center justify-center space-x-3 text-red-500">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500">
+              <span className="text-sm font-bold text-white">!</span>
+            </div>
+            <h3 className="text-2xl font-semibold">Rescue Failed</h3>
+          </div>
+          <div className="text-center">
+            <p className="text-base text-gray-600 dark:text-gray-400">
+              Error occurred during the rescue process
+            </p>
+          </div>
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={(e) => {
+                e.preventDefault();
+                tryAgain?.();
+              }}
             >
-              {icon}
-            </motion.div>
-          ) : (
-            icon
-          )}
-        </IconWrapper>
-      </AnimatePresence>
-      <motion.div
-        className="text-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-      >
-        <motion.h1
-          key={text}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.5 }}
-          className="mb-4 bg-gradient-to-r from-purple-300 to-purple-500 bg-clip-text text-3xl font-bold text-transparent"
-        >
-          {text}
-        </motion.h1>
-        <motion.div
-          key={subtext}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-xl"
-        >
-          {formRescueFundsLoadingStatus === 'loading' ? (
-            <span className="inline-block">
-              <span className="inline-block">{subtext}</span>
-              <motion.span
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.2,
-                }}
-                className="ml-1 inline-block"
-              >
-                .
-              </motion.span>
-              <motion.span
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.4,
-                }}
-                className="inline-block"
-              >
-                .
-              </motion.span>
-              <motion.span
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.6,
-                }}
-                className="inline-block"
-              >
-                .
-              </motion.span>
-            </span>
-          ) : (
-            subtext
-          )}
-        </motion.div>
-
-        {formRescueFundsLoadingStatus === 'success' && (
-          <Link href="/">
-            <Button variant="outline" className="mt-4">
-              Go to Home
+              Try Again
             </Button>
-          </Link>
-        )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        {formRescueFundsLoadingStatus === 'error' && (
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={(e) => {
-              e.preventDefault();
-              tryAgain?.();
-            }}
-          >
-            Try Again
-          </Button>
-        )}
+  if (
+    formRescueFundsLoadingStatus === 'success' &&
+    shouldCompleteSteps &&
+    currentStepIndex >= RESCUE_STEPS.length
+  ) {
+    return (
+      <div className="flex w-full max-w-[600px] flex-col items-center gap-y-2">
+        <div className="w-full rounded-lg p-4">
+          <div className="mb-2 flex items-center justify-center space-x-3 text-green-500">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
+              <Check className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="text-2xl font-semibold">Rescue Successful</h3>
+          </div>
+          <div className="text-center">
+            <p className="text-base text-gray-600 dark:text-gray-400">
+              Funds have been successfully secured
+            </p>
+          </div>
+          <div className="mt-4 flex justify-center gap-4">
+            <Link href="/">
+              <Button variant="outline">Go to Home</Button>
+            </Link>
+            {balanceUrl && (
+              <Link href={balanceUrl} target="_blank" rel="noreferrer">
+                <Button
+                  variant="outline"
+                  className="pointer-events-none border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                >
+                  View Balance
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        {balanceUrl && formRescueFundsLoadingStatus === 'success' && (
-          <Link href={balanceUrl} target="_blank" className="ml-4">
-            <span className="!text-md !rounded-full border border-green-100 px-[10px] py-2 !text-green-500 hover:!bg-green-100 dark:border-green-900/50 dark:hover:!bg-green-900/50">
-              View Balance
-            </span>
-          </Link>
-        )}
-      </motion.div>
+  // Show loading state with steps
+  return (
+    <div className="flex w-full max-w-[600px] flex-col items-center gap-y-4">
+      <div className="w-full">
+        <div className="flex flex-col gap-4">
+          {steps.map((step, index) => (
+            <div
+              key={step.id}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-300',
+                step.status === 'active'
+                  ? 'bg-primary/5 text-primary dark:bg-primary/10 font-semibold'
+                  : step.status === 'completed'
+                    ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                    : 'text-muted-foreground',
+                index === steps.length - 1 && 'animate-slide-up',
+              )}
+            >
+              <div className="border-muted-foreground/20 flex h-6 w-6 items-center justify-center rounded-full border bg-white dark:bg-gray-900">
+                {step.status === 'completed' ? (
+                  <div className="animate-bounce-in flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
+                    <Check className="h-4 w-4 min-w-4 text-white" />
+                  </div>
+                ) : step.status === 'active' ? (
+                  <LucideLoader className="text-primary h-4 w-4 min-w-4 animate-spin" />
+                ) : (
+                  <div className="bg-muted-foreground/30 h-2 w-2 min-w-2 rounded-full" />
+                )}
+              </div>
+              <span
+                className={cn(
+                  'truncate',
+                  step.status === 'active' ? 'animate-pulse' : '',
+                )}
+              >
+                {step.message}
+                {step.status === 'active' && (
+                  <span className="ml-1 inline-block align-middle">
+                    <span className="mx-0.5 inline-block h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0s]" />
+                    <span className="mx-0.5 inline-block h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0.2s]" />
+                    <span className="mx-0.5 inline-block h-1 w-1 animate-bounce rounded-full bg-current [animation-delay:0.4s]" />
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

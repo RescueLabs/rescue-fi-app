@@ -1,19 +1,23 @@
 import { type ClassValue, clsx } from 'clsx';
 import { Wallet } from 'ethers';
 import { twMerge } from 'tailwind-merge';
-import { http, createPublicClient } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { http, createPublicClient, createWalletClient, Chain } from 'viem';
+import { privateKeyToAccount, nonceManager } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
+
+import { rawWalletConfig } from '@/configs/wallet';
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
-export const getWalletAddressFromPrivateKey = (privateKey: string) => {
+export const getWalletAddressFromPrivateKey = (
+  privateKey: string,
+): `0x${string}` => {
   try {
     const wallet = new Wallet(privateKey);
 
-    return wallet.address;
+    return wallet.address as `0x${string}`;
   } catch (error) {
-    return '';
+    return '0x' as `0x${string}`;
   }
 };
 
@@ -47,9 +51,42 @@ export const validatePrivateKey = (privateKey: string) => {
 export const getPrivateKeyAccount = (privateKey: string) => {
   if (!validatePrivateKey(privateKey)) return null;
 
-  return privateKeyToAccount(privateKey as `0x${string}`);
+  return privateKeyToAccount(privateKey as `0x${string}`, { nonceManager });
+};
+
+export const getWalletClient = (privateKey: `0x${string}`, chain: Chain) => {
+  const account = getPrivateKeyAccount(privateKey);
+  if (!account) return null;
+
+  return createWalletClient({
+    chain,
+    account,
+    transport: rawWalletConfig.transports[chain.id] || http(),
+  });
+};
+
+export const isValidPrivateKey = (privateKey: string): boolean => {
+  try {
+    privateKeyToAccount(privateKey as `0x${string}`, { nonceManager });
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const roundToFiveDecimals = (value: number) => {
   return Math.ceil(Number(value) * 10 ** 5) / 10 ** 5;
 };
+
+export const serializeBigInt = (obj: any): string =>
+  JSON.stringify(obj, (_, value) =>
+    typeof value === 'bigint' ? value.toString() : value,
+  );
+
+export const deserializeBigInt = (str: string): any =>
+  JSON.parse(str, (_, value) => {
+    if (typeof value === 'string' && /^\d+$/.test(value) && value.length > 15) {
+      return BigInt(value);
+    }
+    return value;
+  });
