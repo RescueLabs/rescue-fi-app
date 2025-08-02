@@ -23,7 +23,7 @@ export const useDetectTokens = () => {
       forceFetch = false,
     ): Promise<ITokenMetadata[] | undefined> => {
       const alchemy = new Alchemy({
-        apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN', // TODO: move to env
+        apiKey: process.env.ALCHEMY_API_KEY as string,
         network:
           ALCHEMY_NETWORKS[chainId as keyof typeof ALCHEMY_NETWORKS] ||
           Network.ETH_MAINNET,
