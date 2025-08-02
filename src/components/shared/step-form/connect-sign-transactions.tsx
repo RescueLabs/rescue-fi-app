@@ -159,15 +159,6 @@ const CalculateGasFeesAndSendFunds = ({
 
   const { chain } = useAccount();
 
-  console.log(
-    _authorizationSignature,
-    'authorizationSignature',
-    chain?.id,
-    rescueErc20Data,
-    authorizationNonce,
-    victimWalletAddress,
-  );
-
   const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
     gasInEth: string;
     maxPriorityFeePerGas: string;
@@ -191,9 +182,8 @@ const CalculateGasFeesAndSendFunds = ({
       !!chain &&
       !!rescueErc20Data,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnReconnect: false,
-    staleTime: Infinity,
   });
 
   const rescueErc20Gas = useMemo(
@@ -209,6 +199,7 @@ const CalculateGasFeesAndSendFunds = ({
     data: sendTransactionData,
     sendTransaction,
     isPending: isSendingRescueErc20Gas,
+    error: sendTransactionError,
   } = useSendTransaction({});
 
   const {
@@ -245,6 +236,14 @@ const CalculateGasFeesAndSendFunds = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gasTransactionReceipt]);
 
+  useEffect(() => {
+    if (sendTransactionError) {
+      toast.error(sendTransactionError.message, {
+        duration: 4000,
+      });
+    }
+  }, [sendTransactionError]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -5 }}
@@ -252,7 +251,7 @@ const CalculateGasFeesAndSendFunds = ({
       className="flex flex-col items-center justify-center gap-8"
     >
       <div className="space-y-3 text-center text-white">
-        <p className="text-md flex justify-center text-gray-500 dark:text-gray-400">
+        <div className="text-md flex justify-center text-gray-500 dark:text-gray-400">
           <InfoCircledIcon className="hidden size-6 min-w-4 sm:!block" />
           <div className="flex flex-col gap-3">
             <span>
@@ -272,7 +271,7 @@ const CalculateGasFeesAndSendFunds = ({
               .
             </span>
           </div>
-        </p>
+        </div>
       </div>
 
       <Button

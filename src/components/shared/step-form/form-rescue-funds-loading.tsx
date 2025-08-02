@@ -109,6 +109,7 @@ export const FormRescueFundsLoading = ({
     ) {
       // Clear interval on error
       clearInterval(intervalRef.current);
+      setCurrentStepIndex(0);
     }
 
     return () => {
@@ -151,7 +152,7 @@ export const FormRescueFundsLoading = ({
   if (formRescueFundsLoadingStatus === 'error') {
     return (
       <div className="flex w-full max-w-[600px] flex-col items-center gap-y-2">
-        <div className="w-full rounded-lg bg-white p-4 dark:bg-gray-800">
+        <div className="w-full rounded-lg p-4">
           <div className="mb-2 flex items-center justify-center space-x-3 text-red-500">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500">
               <span className="text-sm font-bold text-white">!</span>
@@ -186,15 +187,15 @@ export const FormRescueFundsLoading = ({
   ) {
     return (
       <div className="flex w-full max-w-[600px] flex-col items-center gap-y-2">
-        <div className="w-full rounded-lg bg-white p-4 dark:bg-gray-800">
+        <div className="w-full rounded-lg p-4">
           <div className="mb-2 flex items-center justify-center space-x-3 text-green-500">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
               <Check className="h-4 w-4 text-white" />
             </div>
-            <h3 className="font-semibold">Rescue Successful</h3>
+            <h3 className="text-2xl font-semibold">Rescue Successful</h3>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-base text-gray-600 dark:text-gray-400">
               Funds have been successfully secured
             </p>
           </div>
@@ -203,10 +204,10 @@ export const FormRescueFundsLoading = ({
               <Button variant="outline">Go to Home</Button>
             </Link>
             {balanceUrl && (
-              <Link href={balanceUrl} target="_blank">
+              <Link href={balanceUrl} target="_blank" rel="noreferrer">
                 <Button
                   variant="outline"
-                  className="border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+                  className="pointer-events-none border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
                 >
                   View Balance
                 </Button>
