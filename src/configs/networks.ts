@@ -133,3 +133,16 @@ export const getRpcUrl = (network: string | number, mode: AppMode) => {
   const rpcUrls = RPC_URLS[mode];
   return rpcUrls[network as keyof typeof rpcUrls];
 };
+
+export const REFETCH_GAS_INTERVAL: Record<number, number> = {
+  1: 4000,
+  42161: 4000,
+  56: 4000,
+  8453: 4000,
+  10: 4000,
+  11155111: 4000,
+  421614: 4000,
+  97: 4000,
+  84532: 4000,
+  11155420: 4000,
+};

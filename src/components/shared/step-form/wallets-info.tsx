@@ -125,10 +125,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
     setSelectedTokens({});
     setValue('showInputManual', false);
 
-    if (
-      !isValidPrivateKey(victimPrivateKey) ||
-      !isAddress(receiverWalletAddress)
-    ) {
+    if (!isValidPrivateKey(victimPrivateKey)) {
       setDetectedTokens([]);
       return;
     }
@@ -138,19 +135,18 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
     const tokens = await getDetectedTokens(
       getWalletAddressFromPrivateKey(victimPrivateKey), // victim wallet address
       selectedChainId,
-      receiverWalletAddress,
       true,
     );
 
     setDetectedTokens(tokens || []);
     setDetectedTokensLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [victimPrivateKey, receiverWalletAddress, selectedChainId]);
+  }, [victimPrivateKey, selectedChainId]);
 
   useEffect(() => {
     fetchDetectedTokens();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [victimPrivateKey, receiverWalletAddress, selectedChainId]);
+  }, [victimPrivateKey, selectedChainId]);
 
   useEffect(() => {
     (async () => {
@@ -223,154 +219,149 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
               })}
               error={errors.victimPrivateKey?.message}
               infoElement={
-                detectedTokensLoading && detectedTokens.length === 0 ? (
-                  <IconFidgetSpinner className="mt-2 size-4 animate-spin" />
-                ) : (
-                  <>
-                    {isValidPrivateKey(victimPrivateKey) && (
-                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                        Wallet Address:
-                        {getPrivateKeyAccount(victimPrivateKey)?.address ||
-                          'Invalid private key'}
-                      </p>
-                    )}
+                <>
+                  {isValidPrivateKey(victimPrivateKey) && (
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      Wallet Address:
+                      {getPrivateKeyAccount(victimPrivateKey)?.address ||
+                        'Invalid private key'}
+                    </p>
+                  )}
 
-                    {isValidPrivateKey(victimPrivateKey) &&
-                      isAddress(receiverWalletAddress) && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="mt-2"
-                        >
-                          <p className="mb-2 text-sm">
-                            Select tokens to rescue
-                          </p>
+                  {detectedTokensLoading && detectedTokens.length === 0 ? (
+                    <IconFidgetSpinner className="mt-2 size-4 animate-spin" />
+                  ) : (
+                    isValidPrivateKey(victimPrivateKey) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="mt-2"
+                      >
+                        <p className="mb-2 text-sm">Select tokens to rescue</p>
 
-                          {detectedTokens.length > 0 ? (
-                            <div className="group rounded-lg border border-gray-200 dark:border-gray-800">
-                              <div className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-2">
-                                <span className="text-sm font-medium">
-                                  {detectedTokens.length} Detected Tokens
-                                </span>
+                        {detectedTokens.length > 0 ? (
+                          <div className="group rounded-lg border border-gray-200 dark:border-gray-800">
+                            <div className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-2">
+                              <span className="text-sm font-medium">
+                                {detectedTokens.length} Detected Tokens
+                              </span>
 
-                                <IconRefresh
-                                  className={cn(
-                                    'size-4',
-                                    detectedTokensLoading && 'animate-spin',
-                                  )}
-                                  onClick={fetchDetectedTokens}
-                                />
-                              </div>
-
-                              <div className="border-t border-gray-200 px-4 py-2 dark:border-gray-800">
-                                <ul className="max-h-[200px] space-y-2 overflow-y-auto">
-                                  {detectedTokens.map((token, index) => (
-                                    <li
-                                      key={index}
-                                      className="flex items-center justify-between text-sm"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Input
-                                          type="checkbox"
-                                          id={`token-${index}`}
-                                          value={token.info}
-                                          className="size-3 accent-purple-600 dark:accent-purple-400"
-                                          name="selectedToken"
-                                          checked={token.info in selectedTokens}
-                                          onChange={(_) => {
-                                            toggleSelectToken(token);
-                                          }}
-                                        />
-                                        <label
-                                          htmlFor={`token-${index}`}
-                                          className="flex items-center gap-2 font-medium"
-                                        >
-                                          <IconInfoCircle className="size-4" />
-                                          {token.symbol}
-                                        </label>
-                                      </div>
-                                      <span className="text-gray-600 dark:text-gray-400">
-                                        {token.amount} {token.symbol}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              No tokens detected
-                            </p>
-                          )}
-
-                          <div className="my-2 flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2 whitespace-nowrap">
-                              <Input
-                                type="checkbox"
-                                id="useManual"
-                                className="size-3 accent-purple-600 dark:accent-purple-400"
-                                {...register('showInputManual')}
+                              <IconRefresh
+                                className={cn(
+                                  'size-4',
+                                  detectedTokensLoading && 'animate-spin',
+                                )}
+                                onClick={fetchDetectedTokens}
                               />
-                              <label
-                                htmlFor="useManual"
-                                className="text-sm text-gray-600 dark:text-gray-400"
-                              >
-                                Enter token address manually
-                              </label>
+                            </div>
+
+                            <div className="border-t border-gray-200 px-4 py-2 dark:border-gray-800">
+                              <ul className="max-h-[200px] space-y-2 overflow-y-auto">
+                                {detectedTokens.map((token, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex items-center justify-between text-sm"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="checkbox"
+                                        id={`token-${index}`}
+                                        value={token.info}
+                                        className="size-3 accent-purple-600 dark:accent-purple-400"
+                                        name="selectedToken"
+                                        checked={token.info in selectedTokens}
+                                        onChange={(_) => {
+                                          toggleSelectToken(token);
+                                        }}
+                                      />
+                                      <label
+                                        htmlFor={`token-${index}`}
+                                        className="flex items-center gap-2 font-medium"
+                                      >
+                                        <IconInfoCircle className="size-4" />
+                                        {token.symbol}
+                                      </label>
+                                    </div>
+                                    <span className="text-gray-600 dark:text-gray-400">
+                                      {token.amount} {token.symbol}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
                           </div>
+                        ) : (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            No tokens detected
+                          </p>
+                        )}
 
-                          {showInputManual && (
-                            <FloatingLabelInput
-                              id="tokenAddress"
-                              label="Token Address e.g. 0x..."
-                              {...register('manualTokenAddress', {
-                                validate: (value) => {
-                                  if (!isAddress(value)) {
-                                    return 'Invalid address format';
-                                  }
-                                  return true;
-                                },
-                              })}
-                              error={errors.manualTokenAddress?.message}
-                              infoElement={
-                                manualTokenDetailsLoading ? (
-                                  <IconFidgetSpinner className="mt-2 size-4 animate-spin" />
-                                ) : (
-                                  !!manualTokenDetails && (
-                                    <motion.div
-                                      initial={{ opacity: 0, y: -10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      exit={{ opacity: 0, y: 10 }}
-                                    >
-                                      <p className="text-xxs mt-1 flex gap-1 opacity-70">
-                                        <IconInfoCircle className="h-4 w-4" />
-                                        Balance: {
-                                          manualTokenDetails.amount
-                                        }{' '}
-                                        {manualTokenDetails.symbol}
-                                      </p>
-
-                                      <div className="mt-2 flex w-full justify-end">
-                                        <Button
-                                          variant="outline"
-                                          type="button"
-                                          onClick={addManualToken}
-                                        >
-                                          Add Token
-                                        </Button>
-                                      </div>
-                                    </motion.div>
-                                  )
-                                )
-                              }
+                        <div className="my-2 flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-2 whitespace-nowrap">
+                            <Input
+                              type="checkbox"
+                              id="useManual"
+                              className="size-3 accent-purple-600 dark:accent-purple-400"
+                              {...register('showInputManual')}
                             />
-                          )}
-                        </motion.div>
-                      )}
-                  </>
-                )
+                            <label
+                              htmlFor="useManual"
+                              className="text-sm text-gray-600 dark:text-gray-400"
+                            >
+                              Enter token address manually
+                            </label>
+                          </div>
+                        </div>
+
+                        {showInputManual && (
+                          <FloatingLabelInput
+                            id="tokenAddress"
+                            label="Token Address e.g. 0x..."
+                            {...register('manualTokenAddress', {
+                              validate: (value) => {
+                                if (!isAddress(value)) {
+                                  return 'Invalid address format';
+                                }
+                                return true;
+                              },
+                            })}
+                            error={errors.manualTokenAddress?.message}
+                            infoElement={
+                              manualTokenDetailsLoading ? (
+                                <IconFidgetSpinner className="mt-2 size-4 animate-spin" />
+                              ) : (
+                                !!manualTokenDetails && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                  >
+                                    <p className="text-xxs mt-1 flex gap-1 opacity-70">
+                                      <IconInfoCircle className="h-4 w-4" />
+                                      Balance: {manualTokenDetails.amount}{' '}
+                                      {manualTokenDetails.symbol}
+                                    </p>
+
+                                    <div className="mt-2 flex w-full justify-end">
+                                      <Button
+                                        variant="outline"
+                                        type="button"
+                                        onClick={addManualToken}
+                                      >
+                                        Add Token
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                )
+                              )
+                            }
+                          />
+                        )}
+                      </motion.div>
+                    )
+                  )}
+                </>
               }
             />
           </div>

@@ -23,6 +23,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { REFETCH_GAS_INTERVAL } from '@/configs/networks';
 import {
   ACCEPTED_CHAIN_MAP,
   CHAINS,
@@ -183,6 +184,7 @@ const CalculateGasFeesAndSendFunds = ({
       !!rescueErc20Data,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    refetchInterval: REFETCH_GAS_INTERVAL[chain?.id as number] || 4000,
     refetchOnReconnect: false,
   });
 
