@@ -3,6 +3,8 @@ import { useContext, createContext, useState, useMemo } from 'react';
 import { RescueRequest } from '@/types/rescue';
 
 interface FinalBundleContextType {
+  finalBundleSuccess: boolean;
+  setFinalBundleSuccess: (finalBundleSuccess: boolean) => void;
   finalBundle: RescueRequest | null;
   setFinalBundle: (finalBundle: RescueRequest) => void;
 }
@@ -10,6 +12,8 @@ interface FinalBundleContextType {
 export const FinalBundleContext = createContext<FinalBundleContextType>({
   finalBundle: null,
   setFinalBundle: () => {},
+  finalBundleSuccess: false,
+  setFinalBundleSuccess: () => {},
 });
 
 export const FinalBundleProvider = ({
@@ -18,10 +22,16 @@ export const FinalBundleProvider = ({
   children: React.ReactNode;
 }) => {
   const [finalBundle, setFinalBundle] = useState<RescueRequest | null>(null);
+  const [finalBundleSuccess, setFinalBundleSuccess] = useState(false);
 
   const contextValue = useMemo(
-    () => ({ finalBundle, setFinalBundle }),
-    [finalBundle, setFinalBundle],
+    () => ({
+      finalBundle,
+      setFinalBundle,
+      finalBundleSuccess,
+      setFinalBundleSuccess,
+    }),
+    [finalBundle, setFinalBundle, finalBundleSuccess, setFinalBundleSuccess],
   );
 
   return (

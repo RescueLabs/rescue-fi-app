@@ -9,7 +9,10 @@ import { StepperIndicator } from '@/components/shared/stepper-indicator';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { STORAGE_KEYS } from '@/constants';
-import { FinalBundleProvider } from '@/context/final-bundle-context';
+import {
+  FinalBundleProvider,
+  useFinalBundleContext,
+} from '@/context/final-bundle-context';
 import { StageContext } from '@/context/stage-context';
 import { getWalletAddressFromPrivateKey } from '@/lib/utils';
 import { StepperFormValues } from '@/types/hook-stepper';
@@ -32,7 +35,9 @@ const getStepContent = (step: number) => {
   }
 };
 
-export const TestWalletStepForm = () => {
+export const WalletStepForm = () => {
+  const { finalBundleSuccess } = useFinalBundleContext();
+
   const methods = useForm<StepperFormValues>({
     mode: 'onChange',
   });
@@ -143,7 +148,10 @@ export const TestWalletStepForm = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <StepperIndicator activeStep={activeStep} steps={[1, 2, 3]} />
+              <StepperIndicator
+                activeStep={finalBundleSuccess ? 4 : activeStep}
+                steps={[1, 2, 3]}
+              />
             </motion.div>
 
             <FormProvider {...methods}>
