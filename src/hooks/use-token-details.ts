@@ -1,47 +1,41 @@
 import { Alchemy, Network } from 'alchemy-sdk';
 import { Contract, JsonRpcProvider } from 'ethers';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage } from 'usehooks-ts';
 import { encodeFunctionData, formatUnits, isAddress } from 'viem';
 
-import { CHAIN_ID, RPC_URLS } from '@/constants';
+import { ALCHEMY_NETWORKS } from '@/configs/alchemy';
+import { getMode } from '@/configs/app';
+import { getRpcUrl } from '@/configs/networks';
 import ERC20_ABI from '@/constants/abis/erc20.json';
 import { ITokenMetadata } from '@/types/tokens';
 
 export const useTokenDetails = () => {
-  const provider = useMemo(() => {
-    return new JsonRpcProvider(RPC_URLS[CHAIN_ID]);
-  }, []);
-
   const [_, setDetectedAssets] = useLocalStorage<{
     [account: string]: ITokenMetadata[];
   }>('detectedAssets', {});
-
-  const [alchemy] = useState<Alchemy>(
-    new Alchemy({
-      apiKey: 'MbGU597_l6VQgQ5Cv3bpJsZmYx4gb6cN',
-      network:
-        process.env.NEXT_PUBLIC_NETWORK === 'sepolia'
-          ? Network.ETH_SEPOLIA
-          : Network.ETH_MAINNET,
-    }),
-  );
 
   const getTokenDetails = useCallback(
     async (
       tokenAddress: string,
       victimWalletAddress: string,
-      receiverWalletAddress = '0x0000000000000000000000000000000000000000',
+      chainId: number,
       options?: {
         onError: () => void;
       },
     ) => {
       try {
-        if (
-          !isAddress(victimWalletAddress) ||
-          !isAddress(receiverWalletAddress)
-        ) {
+        const provider = new JsonRpcProvider(getRpcUrl(chainId, getMode()));
+
+        const alchemy = new Alchemy({
+          apiKey: process.env.ALCHEMY_API_KEY as string,
+          network:
+            ALCHEMY_NETWORKS[chainId as keyof typeof ALCHEMY_NETWORKS] ||
+            Network.ETH_MAINNET,
+        });
+
+        if (!isAddress(victimWalletAddress)) {
           return null;
         }
 
@@ -71,7 +65,10 @@ export const useTokenDetails = () => {
             data: encodeFunctionData({
               abi: ERC20_ABI,
               functionName: 'transfer',
-              args: [receiverWalletAddress, tokenBalance],
+              args: [
+                '0x0000000000000000000000000000000000000000',
+                tokenBalance,
+              ],
             }) as `0x${string}`,
           },
         };
@@ -91,7 +88,7 @@ export const useTokenDetails = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [provider, alchemy],
+    [],
   );
 
   return { getTokenDetails };

@@ -75,14 +75,12 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
 
   const [
     victimPrivateKey,
-    receiverWalletAddress,
     showInputManual,
     manualTokenDetails,
     manualTokenAddress,
   ] = useWatch({
     name: [
       'victimPrivateKey',
-      'receiverWalletAddress',
       'showInputManual',
       'manualTokenDetails',
       'manualTokenAddress',
@@ -154,7 +152,6 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
 
       if (
         !isAddress(victimPrivateKey) ||
-        !isAddress(receiverWalletAddress) ||
         !isAddress(manualTokenAddress) ||
         !showInputManual
       ) {
@@ -166,7 +163,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
       const tokenDetails = await getTokenDetails(
         manualTokenAddress,
         victimPrivateKey,
-        receiverWalletAddress,
+        selectedChainId,
         {
           onError: () => {
             setError('manualTokenAddress', {
@@ -180,7 +177,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
       setManualTokenDetailsLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manualTokenAddress, showInputManual]);
+  }, [manualTokenAddress, showInputManual, selectedChainId]);
 
   useEffect(() => {
     if (victimKey && receiverAddress) {
