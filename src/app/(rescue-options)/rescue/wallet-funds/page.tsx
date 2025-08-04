@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const WalletStepForm = dynamic(
   () =>
     import('@/components/shared/step-form/wallet-step-form').then(
-      (mod) => mod.TestWalletStepForm,
+      (mod) => mod.WalletStepForm,
     ),
   {
     ssr: false,

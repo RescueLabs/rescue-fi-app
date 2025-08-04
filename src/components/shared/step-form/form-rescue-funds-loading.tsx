@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { useFinalBundleContext } from '@/context/final-bundle-context';
 import { cn } from '@/lib/utils';
 
 export type FormRescueFundsLoadingStatus = 'loading' | 'success' | 'error';
@@ -59,6 +60,8 @@ export const FormRescueFundsLoading = ({
   tryAgain?: () => void;
   balanceUrl?: string;
 }) => {
+  const { setFinalBundleSuccess } = useFinalBundleContext();
+
   const [steps, setSteps] = useState<Step[]>(RESCUE_STEPS);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [shouldCompleteSteps, setShouldCompleteSteps] = useState(false);
@@ -200,7 +203,7 @@ export const FormRescueFundsLoading = ({
             </p>
           </div>
           <div className="mt-4 flex justify-center gap-4">
-            <Link href="/">
+            <Link href="/" onClick={() => setFinalBundleSuccess(false)}>
               <Button variant="outline">Go to Home</Button>
             </Link>
             {balanceUrl && (

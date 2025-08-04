@@ -16,7 +16,7 @@ import {
 } from './form-rescue-funds-loading';
 
 export const SendFinalBundle = () => {
-  const { finalBundle } = useFinalBundleContext();
+  const { finalBundle, setFinalBundleSuccess } = useFinalBundleContext();
   const { setStage } = useStageContext();
 
   const [, , removeSelectedTokens] = useLocalStorage<
@@ -69,6 +69,7 @@ export const SendFinalBundle = () => {
     },
     onSuccess: (response: { rescueTransactionHash: string }) => {
       setData(response);
+      setFinalBundleSuccess(true);
       clearAllLocalStorage();
       setStatus('success');
     },

@@ -23,6 +23,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { REFETCH_GAS_INTERVAL } from '@/configs/networks';
 import {
   ACCEPTED_CHAIN_MAP,
   CHAINS,
@@ -159,7 +160,11 @@ const CalculateGasFeesAndSendFunds = ({
 
   const { chain } = useAccount();
 
-  const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
+  const {
+    data: gasData,
+    isLoading: isGasDataLoading,
+    isRefetching: isGasDataRefetching,
+  } = useQuery<{
     gasInEth: string;
     maxPriorityFeePerGas: string;
     maxFeePerGas: string;
@@ -183,6 +188,7 @@ const CalculateGasFeesAndSendFunds = ({
       !!rescueErc20Data,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    refetchInterval: REFETCH_GAS_INTERVAL[chain?.id as number] || 4000,
     refetchOnReconnect: false,
   });
 
@@ -261,7 +267,7 @@ const CalculateGasFeesAndSendFunds = ({
             <span className="text-lg">
               The amount of gas fees is{' '}
               <span className="font-bold text-purple-500">
-                {isGasDataLoading && !gasData ? (
+                {isGasDataLoading || isGasDataRefetching ? (
                   <Skeleton className="mr-1 inline-block h-4 w-8" />
                 ) : (
                   `${rescueErc20Gas} `
@@ -285,7 +291,10 @@ const CalculateGasFeesAndSendFunds = ({
         }}
         type="button"
         disabled={
-          isSendingRescueErc20Gas || !gasData || isTransactionReceiptLoading
+          isSendingRescueErc20Gas ||
+          !gasData ||
+          isTransactionReceiptLoading ||
+          isGasDataRefetching
         }
       >
         {isSendingRescueErc20Gas || isTransactionReceiptLoading ? (
