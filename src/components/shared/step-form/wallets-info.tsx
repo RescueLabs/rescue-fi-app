@@ -113,6 +113,13 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
       return;
     }
 
+    if (manualTokenDetails.amount === '0') {
+      setError('manualTokenAddress', {
+        message: 'Token balance is 0',
+      });
+      return;
+    }
+
     setDetectedTokens((prev) => [...prev, manualTokenDetails]);
     setValue('manualTokenDetails', null);
     setValue('manualTokenAddress', '');
@@ -151,7 +158,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
       setValue('manualTokenDetails', null);
 
       if (
-        !isAddress(victimPrivateKey) ||
+        !isValidPrivateKey(victimPrivateKey) ||
         !isAddress(manualTokenAddress) ||
         !showInputManual
       ) {
@@ -162,7 +169,7 @@ export const WalletsInfo: FC<{ formType?: 'wallet' | 'airdrop' }> = ({
 
       const tokenDetails = await getTokenDetails(
         manualTokenAddress,
-        victimPrivateKey,
+        getWalletAddressFromPrivateKey(victimPrivateKey),
         selectedChainId,
         {
           onError: () => {
