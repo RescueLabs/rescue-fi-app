@@ -6,6 +6,7 @@ export interface RescueOptionType {
   description: string;
   icon: React.ReactNode;
   href: string;
+  comingSoon: boolean;
 }
 
 export const rescueOptions: RescueOptionType[] = [
@@ -18,6 +19,7 @@ export const rescueOptions: RescueOptionType[] = [
       <IconWallet className="size-[22px] min-w-[22px] self-start text-purple-500 dark:text-purple-200" />
     ),
     href: '/rescue/wallet-funds',
+    comingSoon: false,
   },
   {
     id: '2',
@@ -27,5 +29,6 @@ export const rescueOptions: RescueOptionType[] = [
       <IconAirBalloon className="size-[22px] min-w-[22px] self-start text-purple-500 dark:text-purple-200" />
     ),
     href: '/rescue/airdrop-funds',
+    comingSoon: true,
   },
 ];
