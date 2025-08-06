@@ -147,10 +147,15 @@ export const WalletStepForm = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              className="mb-10"
             >
               <StepperIndicator
                 activeStep={finalBundleSuccess ? 4 : activeStep}
-                steps={[1, 2, 3]}
+                steps={[
+                  { label: 'Wallets & Assets', number: 1 },
+                  { label: 'Connect & Sign', number: 2 },
+                  { label: 'Monitor Transaction', number: 3 },
+                ]}
               />
             </motion.div>
 

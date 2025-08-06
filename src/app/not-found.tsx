@@ -58,6 +58,21 @@ const NotFound = () => {
     },
   };
 
+  const rescueLinks = [
+    {
+      label: 'Wallet Rescue',
+      href: '/rescue/wallet-funds',
+    },
+    {
+      label: 'Airdrop Rescue',
+      href: '/rescue/airdrop-funds',
+    },
+    {
+      label: 'Help & FAQs',
+      href: '/faqs',
+    },
+  ];
+
   return (
     <ScrollAreaWithMobileContraints className="bg-gradient-to-br from-white to-purple-50/30 dark:from-in-black-300 dark:to-purple-950/20">
       <motion.div
@@ -78,7 +93,6 @@ const NotFound = () => {
               </motion.div>
             </motion.div>
 
-            {/* 404 Number with Glow Effect */}
             <motion.div variants={itemVariants} className="mb-4">
               <motion.h1
                 variants={numberGlow}
@@ -97,7 +111,6 @@ const NotFound = () => {
               </motion.h1>
             </motion.div>
 
-            {/* Title and Description */}
             <motion.div variants={itemVariants} className="space-y-2">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white md:text-3xl">
                 Page Not Found
@@ -110,7 +123,6 @@ const NotFound = () => {
           </CardHeader>
 
           <CardContent className="space-y-8 pt-4">
-            {/* Rescue-themed Message */}
             <motion.div variants={itemVariants} className="text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-sm dark:bg-purple-900/30">
                 <IconSearch className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -143,33 +155,18 @@ const NotFound = () => {
               className="border-t border-gray-200 pt-6 dark:border-slate-200/20"
             >
               <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
-                <Link
-                  href="/rescue/wallet-funds"
-                  className="group flex items-center justify-center gap-2 rounded-lg p-3 text-sm text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-600 dark:text-gray-400 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
-                >
-                  <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                  Wallet Rescue
-                </Link>
-
-                <Link
-                  href="/rescue/airdrop-funds"
-                  className="group flex items-center justify-center gap-2 rounded-lg p-3 text-sm text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-600 dark:text-gray-400 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
-                >
-                  <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                  Airdrop Rescue
-                </Link>
-
-                <Link
-                  href="/faqs"
-                  className="group flex items-center justify-center gap-2 rounded-lg p-3 text-sm text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-600 dark:text-gray-400 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
-                >
-                  <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                  Help & FAQs
-                </Link>
+                {rescueLinks.map((link) => (
+                  <Link
+                    href={link.href}
+                    className="group flex items-center justify-center gap-2 rounded-lg p-3 text-sm text-gray-600 transition-all hover:bg-purple-50 hover:text-purple-600 dark:text-gray-400 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
+                  >
+                    <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    {link.label}
+                  </Link>
+                ))}
               </div>
             </motion.div>
 
-            {/* Footer Message */}
             <motion.div
               variants={itemVariants}
               className="text-center text-xs text-gray-500 dark:text-gray-400"

@@ -168,6 +168,7 @@ const CalculateGasFeesAndSendFunds = ({
     gasInEth: string;
     maxPriorityFeePerGas: string;
     maxFeePerGas: string;
+    deficit: string;
   }>({
     queryKey: [QUERY_KEYS.estimateGas, victimWalletAddress],
     queryFn: async () => {
@@ -178,6 +179,7 @@ const CalculateGasFeesAndSendFunds = ({
         gasInEth: string;
         maxPriorityFeePerGas: string;
         maxFeePerGas: string;
+        deficit: string;
       }>;
     },
     enabled:
@@ -197,7 +199,7 @@ const CalculateGasFeesAndSendFunds = ({
       new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 9,
         maximumFractionDigits: 9,
-      }).format(Number(formatEther(BigInt(gasData?.gasInEth || '0')))),
+      }).format(Number(formatEther(BigInt(gasData?.deficit || '0')))),
     [gasData],
   );
 
@@ -286,7 +288,7 @@ const CalculateGasFeesAndSendFunds = ({
           sendTransaction({
             to: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
             data: victimWalletAddress!,
-            value: gasData?.gasInEth ? BigInt(gasData.gasInEth) : BigInt(0),
+            value: gasData?.deficit ? BigInt(gasData.deficit) : BigInt(0),
           });
         }}
         type="button"
