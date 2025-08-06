@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import React, { Suspense } from 'react';
 
 import { ComingSoon } from '@/components/shared/coming-soon';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollAreaWithMobileContraints } from '@/components/shared/scrollarea-with-mobile-constraints';
 
 export const metadata: Metadata = {
   title: 'RescueFi | Rescue airdrop funds',
@@ -21,12 +21,12 @@ export const metadata: Metadata = {
 
 const RescueAirdropFundsPage = () => {
   return (
-    <ScrollArea className="flex h-[calc(100dvh-60px)] w-full flex-col gap-y-7 overflow-y-auto overflow-x-hidden md:h-full">
+    <ScrollAreaWithMobileContraints>
       <Suspense fallback={null}>
         {/* <AirdropStepForm /> */}
         <ComingSoon />
       </Suspense>
-    </ScrollArea>
+    </ScrollAreaWithMobileContraints>
   );
 };
 

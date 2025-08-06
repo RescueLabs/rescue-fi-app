@@ -2,6 +2,8 @@
 
 import {
   IconAirBalloon,
+  IconCoffee,
+  IconHelpCircle,
   IconMoon,
   IconSun,
   IconWallet,
@@ -50,6 +52,30 @@ const links: {
       },
     ],
   },
+  {
+    heading: 'Questions?',
+    subLinks: [
+      {
+        label: 'FAQs',
+        href: '/faqs',
+        icon: (
+          <IconHelpCircle className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
+        ),
+      },
+    ],
+  },
+  {
+    heading: 'Support Us',
+    subLinks: [
+      {
+        label: 'Buy us a coffee',
+        href: '/support-us',
+        icon: (
+          <IconCoffee className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
+        ),
+      },
+    ],
+  },
 ];
 
 export const DashboardSidebar = () => {
@@ -94,8 +120,15 @@ export const DashboardSidebar = () => {
             </motion.span>
           </Link>
 
-          <div className="flex flex-1 flex-col gap-y-2 overflow-y-auto overflow-x-hidden">
-            {links.map((link) => (
+          <div
+            className={cn(
+              'flex flex-1 flex-col gap-y-2 overflow-y-auto overflow-x-hidden',
+              {
+                'gap-y-0': !open,
+              },
+            )}
+          >
+            {links.map((link, index) => (
               <div className="flex flex-col gap-1.5" key={link.heading}>
                 <motion.span
                   initial={{
@@ -110,6 +143,10 @@ export const DashboardSidebar = () => {
                 >
                   {link.heading}
                 </motion.span>
+
+                {!open && index > 0 && (
+                  <div className="h-[1px] w-full bg-slate-200" />
+                )}
 
                 <div className="flex flex-col gap-1.5">
                   {link.subLinks.map((subLink, idx) => (
