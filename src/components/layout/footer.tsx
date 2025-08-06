@@ -17,7 +17,7 @@ export const Footer = () => {
 
   return (
     <motion.footer
-      className="absolute bottom-1 left-0 flex w-full flex-col items-center"
+      className="fixed bottom-2 left-0 flex w-full flex-col items-center md:absolute"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}

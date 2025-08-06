@@ -71,10 +71,10 @@ export const ComingSoon = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex min-h-[calc(100vh-120px)] w-full items-center justify-center p-4"
+      className="flex h-full w-full items-center justify-center"
     >
-      <Card className="w-full max-w-3xl p-4 shadow-xl md:p-6">
-        <CardHeader className="text-center">
+      <Card className="flex h-full w-full flex-col items-center justify-center border-none !bg-transparent p-4 shadow-xl md:p-6">
+        <CardHeader className="max-w-2xl text-center">
           <motion.div variants={itemVariants} className="mx-auto mb-6">
             <motion.div
               variants={iconBounce}
@@ -95,7 +95,7 @@ export const ComingSoon = () => {
           </motion.div>
         </CardHeader>
 
-        <CardContent className="space-y-8">
+        <CardContent className="max-w-2xl space-y-8">
           <motion.div variants={itemVariants} className="text-center">
             <p className="leading-relaxed text-gray-700 dark:text-gray-200">
               RescueFi is getting an upgrade! We&apos;re building new features
