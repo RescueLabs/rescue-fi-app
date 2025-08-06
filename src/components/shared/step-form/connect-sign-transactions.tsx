@@ -160,11 +160,7 @@ const CalculateGasFeesAndSendFunds = ({
 
   const { chain } = useAccount();
 
-  const {
-    data: gasData,
-    isLoading: isGasDataLoading,
-    isRefetching: isGasDataRefetching,
-  } = useQuery<{
+  const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
     gasInEth: string;
     maxPriorityFeePerGas: string;
     maxFeePerGas: string;
@@ -269,7 +265,7 @@ const CalculateGasFeesAndSendFunds = ({
             <span className="text-lg">
               The amount of gas fees is{' '}
               <span className="font-bold text-purple-500">
-                {isGasDataLoading || isGasDataRefetching ? (
+                {isGasDataLoading ? (
                   <Skeleton className="mr-1 inline-block h-4 w-8" />
                 ) : (
                   `${rescueErc20Gas} `
@@ -293,10 +289,7 @@ const CalculateGasFeesAndSendFunds = ({
         }}
         type="button"
         disabled={
-          isSendingRescueErc20Gas ||
-          !gasData ||
-          isTransactionReceiptLoading ||
-          isGasDataRefetching
+          isSendingRescueErc20Gas || !gasData || isTransactionReceiptLoading
         }
       >
         {isSendingRescueErc20Gas || isTransactionReceiptLoading ? (
