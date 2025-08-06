@@ -1,12 +1,20 @@
 import { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import React, { Suspense } from 'react';
 
-import { AllFaqs } from '@/components/layout/sections/all-faqs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const metadata: Metadata = {
   title: 'RescueFi | Frequently Asked Questions',
 };
+
+const AllFaqs = dynamic(
+  () =>
+    import('@/components/layout/sections/all-faqs').then((mod) => mod.AllFaqs),
+  {
+    ssr: false,
+  },
+);
 
 const FAQPage = () => {
   return (
