@@ -202,7 +202,15 @@ export const AirdropStepForm = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <StepperIndicator activeStep={activeStep} steps={[1, 2, 3, 4]} />
+          <StepperIndicator
+            activeStep={activeStep}
+            steps={[
+              { label: 'Airdrop Contract', number: 1 },
+              { label: 'Victim Wallets & Assets', number: 2 },
+              { label: 'Rescuer Wallets & Assets', number: 3 },
+              { label: 'Monitor Transaction', number: 4 },
+            ]}
+          />
         </motion.div>
 
         {activeStep === 3 && (

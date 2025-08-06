@@ -160,14 +160,11 @@ const CalculateGasFeesAndSendFunds = ({
 
   const { chain } = useAccount();
 
-  const {
-    data: gasData,
-    isLoading: isGasDataLoading,
-    isRefetching: isGasDataRefetching,
-  } = useQuery<{
+  const { data: gasData, isLoading: isGasDataLoading } = useQuery<{
     gasInEth: string;
     maxPriorityFeePerGas: string;
     maxFeePerGas: string;
+    deficit: string;
   }>({
     queryKey: [QUERY_KEYS.estimateGas, victimWalletAddress],
     queryFn: async () => {
@@ -178,6 +175,7 @@ const CalculateGasFeesAndSendFunds = ({
         gasInEth: string;
         maxPriorityFeePerGas: string;
         maxFeePerGas: string;
+        deficit: string;
       }>;
     },
     enabled:
@@ -197,7 +195,7 @@ const CalculateGasFeesAndSendFunds = ({
       new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 9,
         maximumFractionDigits: 9,
-      }).format(Number(formatEther(BigInt(gasData?.gasInEth || '0')))),
+      }).format(Number(formatEther(BigInt(gasData?.deficit || '0')))),
     [gasData],
   );
 
@@ -267,7 +265,7 @@ const CalculateGasFeesAndSendFunds = ({
             <span className="text-lg">
               The amount of gas fees is{' '}
               <span className="font-bold text-purple-500">
-                {isGasDataLoading || isGasDataRefetching ? (
+                {isGasDataLoading ? (
                   <Skeleton className="mr-1 inline-block h-4 w-8" />
                 ) : (
                   `${rescueErc20Gas} `
@@ -286,15 +284,12 @@ const CalculateGasFeesAndSendFunds = ({
           sendTransaction({
             to: process.env.BACKEND_WALLET_ADDRESS as `0x${string}`,
             data: victimWalletAddress!,
-            value: gasData?.gasInEth ? BigInt(gasData.gasInEth) : BigInt(0),
+            value: gasData?.deficit ? BigInt(gasData.deficit) : BigInt(0),
           });
         }}
         type="button"
         disabled={
-          isSendingRescueErc20Gas ||
-          !gasData ||
-          isTransactionReceiptLoading ||
-          isGasDataRefetching
+          isSendingRescueErc20Gas || !gasData || isTransactionReceiptLoading
         }
       >
         {isSendingRescueErc20Gas || isTransactionReceiptLoading ? (
