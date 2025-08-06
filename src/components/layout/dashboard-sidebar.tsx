@@ -2,7 +2,6 @@
 
 import {
   IconAirBalloon,
-  IconCoffee,
   IconHelpCircle,
   IconMoon,
   IconSun,
@@ -20,9 +19,10 @@ import {
   SidebarLink,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { ThemeSwitch } from '@/components/ui/theme-switch';
 import { cn } from '@/lib/utils';
 
-import { ThemeSwitch } from '../ui/theme-switch';
+import { BuyMeACoffeeIcon } from '../shared/icons/buy-me-a-coffee';
 
 const links: {
   heading: string;
@@ -71,7 +71,7 @@ const links: {
         label: 'Buy us a coffee',
         href: '/support-us',
         icon: (
-          <IconCoffee className="text-in-gray dark:text-in-slate-700 h-5 w-5 flex-shrink-0 group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
+          <BuyMeACoffeeIcon className="-ml-2 h-9 w-9 flex-shrink-0 text-white group-hover/sidebar:text-purple-500 dark:group-hover/sidebar:text-purple-400" />
         ),
       },
     ],
@@ -161,6 +161,9 @@ export const DashboardSidebar = () => {
                             )
                           : pathname.includes(subLink.href)
                       }
+                      labelClassName={cn({
+                        '!-ml-2': subLink.label === 'Buy us a coffee',
+                      })}
                     />
                   ))}
                 </div>

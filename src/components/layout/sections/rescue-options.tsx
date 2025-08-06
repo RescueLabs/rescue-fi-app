@@ -4,18 +4,16 @@ import { IconArrowRight } from '@tabler/icons-react';
 import Link from 'next/link';
 import React, { FC } from 'react';
 
-import { RescueOptionType } from '@/data/rescue-options';
-import { cn } from '@/lib/utils';
-
+import { SidebarLogo } from '@/components/shared/icons/sidebar-logo';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../ui/card';
-
-import { SidebarLogo } from './icons/sidebar-logo';
+} from '@/components/ui/card';
+import { RescueOptionType } from '@/data/rescue-options';
+import { cn } from '@/lib/utils';
 
 interface RescueOptionsProps {
   rescueOptions: RescueOptionType[];

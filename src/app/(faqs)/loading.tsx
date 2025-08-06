@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { FaqsLoading } from '@/components/shared/faqs-loading';
+import { FaqsLoading } from '@/components/layout/sections/faqs-loading';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Loading = () => {

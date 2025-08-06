@@ -2,8 +2,8 @@
 
 import React from 'react';
 
-import { Card } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const RescueOptionsLoading = () => {
   return (

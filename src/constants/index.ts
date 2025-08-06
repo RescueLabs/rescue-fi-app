@@ -100,3 +100,42 @@ export const BLOCKSCAN_URLS = {
   10: 'https://optimistic.etherscan.io/tx',
   11155420: 'https://sepolia-optimism.etherscan.io/tx',
 };
+
+export const SUPPORT_US_CHAINS = [
+  {
+    id: 'ethereum',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    address: '0x742d35Cc6634C0532925a3b8D5c1c9c0b4c4c4c4',
+  },
+  {
+    id: 'bsc',
+    name: 'BSC',
+    symbol: 'BNB',
+    address: '0x742d35Cc6634C0532925a3b8D5c1c9c0b4c4c4c4',
+  },
+  {
+    id: 'polygon',
+    name: 'Polygon',
+    symbol: 'MATIC',
+    address: '0x742d35Cc6634C0532925a3b8D5c1c9c0b4c4c4c4',
+  },
+  {
+    id: 'arbitrum',
+    name: 'Arbitrum',
+    symbol: 'ARB',
+    address: '0x742d35Cc6634C0532925a3b8D5c1c9c0b4c4c4c4',
+  },
+  {
+    id: 'optimism',
+    name: 'Optimism',
+    symbol: 'OP',
+    address: '0x742d35Cc6634C0532925a3b8D5c1c9c0b4c4c4c4',
+  },
+  {
+    id: 'bitcoin',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+  },
+];
