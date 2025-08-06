@@ -119,7 +119,7 @@ export class RescueService {
     authorization: `0x${string}`,
     nonce: number,
     gasSummary: GasSummary,
-    gasTransactionHash: string,
+    gasTransactionHash?: string,
   ): Promise<{
     rescueTxHash: string;
     ethUsed: bigint;

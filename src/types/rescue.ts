@@ -29,7 +29,7 @@ export interface RescueRequest {
   tokens: string[];
   deadline: number;
   receiverWallet: string;
-  gasTransactionHash: string;
+  gasTransactionHash?: string;
   compromisedAddress: string;
   chainId: number;
   nonce: number; // Nonce for the authorization

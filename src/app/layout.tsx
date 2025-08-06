@@ -5,7 +5,7 @@ import NextTopLoader from 'nextjs-toploader';
 import { DashboardSidebar } from '@/components/layout/dashboard-sidebar';
 import { Footer } from '@/components/layout/footer';
 import { RainbowKitClientProvider } from '@/components/layout/rainbow-kit-provider';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/components/layout/theme-provider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';

@@ -194,12 +194,14 @@ export const SidebarLink = ({
   link,
   className,
   active,
+  labelClassName,
   ...props
 }: {
   link: Links;
   className?: string;
   props?: LinkProps;
   active?: boolean;
+  labelClassName?: string;
 }) => {
   const { open, animate } = useSidebar();
   return (
@@ -229,6 +231,7 @@ export const SidebarLink = ({
           }}
           className={cn(
             '!m-0 inline-block whitespace-pre !p-0 text-[13px] font-normal leading-5 text-gray-800 transition duration-150 group-hover/sidebar:font-medium group-hover/sidebar:text-black dark:text-slate-200 dark:group-hover/sidebar:text-white',
+            labelClassName,
             {
               'text-black dark:text-white': active,
             },

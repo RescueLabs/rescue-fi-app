@@ -5,12 +5,11 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import React from 'react';
 
+import { BuyMeACoffeeIcon } from '@/components/shared/icons/buy-me-a-coffee';
+import { QuestionsLinkButton } from '@/components/shared/questions-link-button';
+import { Button } from '@/components/ui/button';
+import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
-
-import { BuyMeACoffeeIcon } from '../shared/icons/buy-me-a-coffee';
-import { QuestionsLinkButton } from '../shared/questions-link-button';
-import { Button } from '../ui/button';
-import { useSidebar } from '../ui/sidebar';
 
 export const Footer = () => {
   const { open } = useSidebar();
@@ -47,13 +46,12 @@ export const Footer = () => {
             </Link>
 
             <Link
-              href="https://buymeacoffee.com/rescuefilabs"
-              target="_blank"
+              href="/support-us"
               className="block transition-all duration-300 hover:scale-105"
             >
               <Button className="flex h-10 items-center justify-center !rounded-full">
                 <BuyMeACoffeeIcon className="-ml-2 h-10 w-10" />
-                <span className="text-xs">Buy me a coffee</span>
+                <span className="mr-2 text-xs">Support us</span>
               </Button>
             </Link>
           </div>

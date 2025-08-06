@@ -9,70 +9,70 @@ import { SidebarLogo } from '@/components/shared/icons/sidebar-logo';
 import { ScrollAreaWithMobileContraints } from '@/components/shared/scrollarea-with-mobile-constraints';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
+const rescueLinks = [
+  {
+    label: 'Wallet Rescue',
+    href: '/rescue/wallet-funds',
+  },
+  {
+    label: 'Airdrop Rescue',
+    href: '/rescue/airdrop-funds',
+  },
+  {
+    label: 'Help & FAQs',
+    href: '/faqs',
+  },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4 },
+  },
+};
+
+const logoFloat = {
+  animate: {
+    y: [0, -2, 2, 0],
+    rotate: [0, 2, -2, 0],
+    transition: {
+      duration: 4,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    },
+  },
+};
+
+const numberGlow = {
+  animate: {
+    textShadow: [
+      '0 0 20px rgba(123, 63, 228, 0.5)',
+      '0 0 40px rgba(123, 63, 228, 0.8)',
+      '0 0 20px rgba(123, 63, 228, 0.5)',
+    ],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    },
+  },
+};
+
 const NotFound = () => {
-  const containerVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 },
-    },
-  };
-
-  const logoFloat = {
-    animate: {
-      y: [0, -2, 2, 0],
-      rotate: [0, 2, -2, 0],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
-
-  const numberGlow = {
-    animate: {
-      textShadow: [
-        '0 0 20px rgba(123, 63, 228, 0.5)',
-        '0 0 40px rgba(123, 63, 228, 0.8)',
-        '0 0 20px rgba(123, 63, 228, 0.5)',
-      ],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      },
-    },
-  };
-
-  const rescueLinks = [
-    {
-      label: 'Wallet Rescue',
-      href: '/rescue/wallet-funds',
-    },
-    {
-      label: 'Airdrop Rescue',
-      href: '/rescue/airdrop-funds',
-    },
-    {
-      label: 'Help & FAQs',
-      href: '/faqs',
-    },
-  ];
-
   return (
     <ScrollAreaWithMobileContraints className="bg-gradient-to-br from-white to-purple-50/30 dark:from-in-black-300 dark:to-purple-950/20">
       <motion.div
@@ -132,7 +132,6 @@ const NotFound = () => {
               </div>
             </motion.div>
 
-            {/* Action Buttons */}
             <motion.div
               variants={itemVariants}
               className="flex flex-col gap-4 sm:flex-row sm:justify-center"

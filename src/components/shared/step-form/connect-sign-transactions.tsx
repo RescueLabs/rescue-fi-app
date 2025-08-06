@@ -134,7 +134,7 @@ const CalculateGasFeesAndSendFunds = ({
   const { setFinalBundle } = useFinalBundleContext();
   const { setStage: setCentralStage } = useStageContext();
 
-  const _authorizationSignature = useMemo(
+  const _authorizationSignatureString = useMemo(
     () =>
       `${
         (authorizationSignature?.r || '') +
@@ -169,7 +169,7 @@ const CalculateGasFeesAndSendFunds = ({
     queryKey: [QUERY_KEYS.estimateGas, victimWalletAddress],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/estimateGas?chainId=${chain?.id}&data=${rescueErc20Data}&compromisedAddress=${victimWalletAddress}&authorization=${_authorizationSignature}&nonce=${authorizationNonce}`,
+        `/api/estimateGas?chainId=${chain?.id}&data=${rescueErc20Data}&compromisedAddress=${victimWalletAddress}&authorization=${_authorizationSignatureString}&nonce=${authorizationNonce}`,
       );
       return response.data as Promise<{
         gasInEth: string;
@@ -180,7 +180,7 @@ const CalculateGasFeesAndSendFunds = ({
     },
     enabled:
       !!victimWalletAddress &&
-      !!_authorizationSignature &&
+      !!_authorizationSignatureString &&
       authorizationNonce >= BigInt(0) &&
       !!chain &&
       !!rescueErc20Data,
@@ -213,18 +213,18 @@ const CalculateGasFeesAndSendFunds = ({
     hash: sendTransactionData,
   });
 
-  useEffect(() => {
+  const goToFinalStage = useCallback(() => {
     if (
       gasTransactionReceipt &&
       chain?.id &&
       receiverWalletAddress &&
       victimWalletAddress &&
       eip712Signature &&
-      _authorizationSignature &&
+      _authorizationSignatureString &&
       rescueTokenAddresses?.length > 0
     ) {
       setFinalBundle({
-        authorization: _authorizationSignature,
+        authorization: _authorizationSignatureString,
         eip712Signature: eip712Signature!,
         tokens: rescueTokenAddresses,
         deadline: Number(deadline),
@@ -237,8 +237,27 @@ const CalculateGasFeesAndSendFunds = ({
 
       setCentralStage(3);
     }
+  }, [
+    gasTransactionReceipt,
+    chain,
+    receiverWalletAddress,
+    victimWalletAddress,
+    eip712Signature,
+    authorizationSignature,
+    _authorizationSignatureString,
+    rescueTokenAddresses,
+    deadline,
+  ]);
+
+  useEffect(() => {
+    if (
+      gasTransactionReceipt ||
+      (gasData && Number(gasData.deficit || '-1') === 0)
+    ) {
+      goToFinalStage();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gasTransactionReceipt]);
+  }, [gasTransactionReceipt, gasData]);
 
   useEffect(() => {
     if (sendTransactionError) {
@@ -270,7 +289,7 @@ const CalculateGasFeesAndSendFunds = ({
                 ) : (
                   `${rescueErc20Gas} `
                 )}
-                ETH
+                {chain?.nativeCurrency.symbol || 'ETH'}
               </span>
               .
             </span>
@@ -289,7 +308,10 @@ const CalculateGasFeesAndSendFunds = ({
         }}
         type="button"
         disabled={
-          isSendingRescueErc20Gas || !gasData || isTransactionReceiptLoading
+          isSendingRescueErc20Gas ||
+          !gasData ||
+          isTransactionReceiptLoading ||
+          rescueErc20Gas === '0'
         }
       >
         {isSendingRescueErc20Gas || isTransactionReceiptLoading ? (

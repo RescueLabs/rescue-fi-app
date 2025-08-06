@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { RescueOptionsLoading } from '@/components/shared/rescue-options-loading';
+import { RescueOptionsLoading } from '@/components/layout/sections/rescue-options-loading';
 
 const Loading = () => {
   return <RescueOptionsLoading />;
